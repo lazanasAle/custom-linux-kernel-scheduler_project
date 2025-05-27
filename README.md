@@ -43,7 +43,7 @@ you can use this `bzImage` in an emulator with qemu providing the equivalent ini
 
 --- 
 
-## BPF_Uproach Folder
+## BPF-uproach Folder
 
 This folder contains:
 
