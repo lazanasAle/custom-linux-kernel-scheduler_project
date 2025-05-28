@@ -83,7 +83,7 @@ void make_first_wrong(){
     }
     long ret2=syscall(__NR_SET_SCHED_PARS, now+7, now+13, BAD_TIME);
     if(ret1!=0){
-        printf("[+] correctly rejecting parameters with computation_time more thatn given in deadlines\n");
+        printf("[+] correctly rejecting parameters with computation_time more than given in deadlines\n");
     }
     else{
         printf("[-] the parameters were accepted incorrectly\n");
