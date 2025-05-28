@@ -2,71 +2,127 @@
 #include <unistd.h>
 #include <time.h>
 #include <sys/syscall.h>
+#include <stdlib.h>
 #include <linux/my_sched_sys.h>
 
 #define __NR_SET_SCHED_PARS 467
 #define __NR_GET_SCHED_PARS 468
 #define __NR_GET_SCHED_SCORE 469
 
-void print_sched_params(struct d_params *pars) {
-    printf("Current Scheduling Parameters:\n");
-    printf("  Deadline 1       : %ld\n", pars->deadline_1);
-    printf("  Deadline 2       : %ld\n", pars->deadline_2);
-    printf("  Computation Time : %ld\n", pars->computation_time);
+#define GOOD_TIME 1200
+#define BAD_TIME 120000
+
+
+void print_params(struct d_params *params);
+void make_first_right();
+void make_first_wrong();
+void make_second_right();
+void make_second_wrong();
+
+int main(){
+    make_first_right();
+
+    long score_before = syscall(__NR_GET_SCHED_SCORE);
+    printf("score before sleeping = %ld\n", score_before);
+    sleep(4);
+    long score_after4 = syscall(__NR_GET_SCHED_SCORE);
+    printf("score after sleeping 4 = %ld\n", score_after4);
+
+    sleep(3);
+    long score_after7 = syscall(__NR_GET_SCHED_SCORE);
+    printf("score after sleeping 7 = %ld\n", score_after7);
+
+    sleep(2);
+    long score_after9 = syscall(__NR_GET_SCHED_SCORE);
+    printf("score after sleeping 9 = %ld\n", score_after9);
+
+    sleep(4);
+    long score_after13 = syscall(__NR_GET_SCHED_SCORE);
+    printf("score after sleeping 13 = %ld\n", score_after13);
+
+    make_first_wrong();
+
+    make_second_right();
+
+    make_second_wrong();
 }
 
-int main() {
-    struct d_params pars;
+
+void print_params(struct d_params *params){
+    printf("Deadline 1: %ld\n", params->deadline_1);
+    printf("Deadline 2: %ld\n", params->deadline_2);
+    printf("Computation Time: %ld\n", params->computation_time);
+}
+
+
+void make_first_right(){
     time_t now = time(NULL);
-
-    // Valid case
-    long ret1 = syscall(__NR_SET_SCHED_PARS, now + 5, now + 15, 300);
-    if (ret1 != 0) {
-        perror("SET_SCHED_PARS failed (valid case)");
-        return -1;
+    long ret1=syscall(__NR_SET_SCHED_PARS, now+7, now+12, GOOD_TIME);
+    if(ret1!=0){
+        printf("[-] incorrect rejection of parameters with values: D1: %ld D2: %ld CT: %ld\n", now+7, now+10, GOOD_TIME);
     }
-    printf("[+] Set valid scheduling parameters.\n");
-
-    // Fetch current scheduling parameters
-    if (syscall(__NR_GET_SCHED_PARS, &pars) == 0) {
-        print_sched_params(&pars);
-    } else {
-        perror("GET_SCHED_PARS failed");
-        return -1;
+    else{
+        printf("[+] correctly accepted right parameters\n");
+        struct d_params pars;
+        syscall(__NR_GET_SCHED_PARS, &pars);
+        print_params(&pars);
     }
+}
 
-    // Get initial score
-    long score1 = syscall(__NR_GET_SCHED_SCORE);
-    if (score1 < 0) {
-        perror("GET_SCHED_SCORE failed");
-        return -1;
+void make_first_wrong(){
+    time_t now = time(NULL);
+    long ret1=syscall(__NR_SET_SCHED_PARS, now+11, now+8, GOOD_TIME);
+    if(ret1!=0){
+        printf("[+] correctly rejecting d2<d1 parameters\n");
     }
-    printf("Initial scheduling score: %ld\n", score1);
-
-    // Wait a few seconds to simulate passage of time
-    sleep(7);
-
-    // Get score after wait
-    long score2 = syscall(__NR_GET_SCHED_SCORE);
-    printf("Scheduling score after 7s: %ld\n", score2);
-
-    // Invalid case: deadline_1 > deadline_2
-    long ret2 = syscall(__NR_SET_SCHED_PARS, now + 20, now + 10, 200);
-    if (ret2 != 0) {
-        printf("[+] Correctly rejected invalid parameters (d1 > d2).\n");
-    } else {
-        printf("[-] ERROR: Accepted invalid parameters (d1 > d2).\n");
-        return -1;
+    else{
+        printf("[-] the parameters were accepted incorrectly\n");
+        struct d_params pars;
+        syscall(__NR_GET_SCHED_PARS, &pars);
+        print_params(&pars);
     }
-
-    // Invalid case: computation time exceeds deadline range
-    long ret3 = syscall(__NR_SET_SCHED_PARS, now + 30, now + 40, 100000);
-    if (ret3 != 0) {
-        printf("[+] Correctly rejected invalid parameters (computation too long).\n");
-    } else {
-        printf("[-] ERROR: Accepted invalid computation time.\n");
-        return -1;
+    long ret2=syscall(__NR_SET_SCHED_PARS, now+7, now+13, BAD_TIME);
+    if(ret1!=0){
+        printf("[+] correctly rejecting parameters with computation_time more thatn given in deadlines\n");
     }
+    else{
+        printf("[-] the parameters were accepted incorrectly\n");
+        struct d_params pars;
+        syscall(__NR_GET_SCHED_PARS, &pars);
+        print_params(&pars);
+    }
+}
 
-    return 0;
+void make_second_right(){
+    struct d_params *pars=malloc(sizeof(struct d_params));
+    long ret_right1 = syscall(__NR_GET_SCHED_PARS, pars);
+    if(ret_right1!=0){
+        printf("[-] incorrectly rejected a valid pointer\n");
+    }
+    else{
+        printf("[+] the valid pointer has the values\n");
+        print_params(pars);
+    }
+    free(pars);
+}
+
+
+void make_second_wrong(){
+    struct d_params *pars;
+    long ret_wrong1 = syscall(__NR_GET_SCHED_PARS, pars);
+    if(ret_wrong1!=0){
+        printf("[+] correctly rejected an invalid pointer\n");
+    }
+    else{
+        printf("[-] the invalid pointer surprisingly has the values\n");
+        print_params(pars);
+    }
+    pars=NULL;
+    ret_wrong1 = syscall(__NR_GET_SCHED_PARS, pars);
+    if(ret_wrong1!=0){
+        printf("[+] correctly rejected a NULL pointer\n");
+    }
+    else{
+        printf("[-] the NULL pointer surprisingly has the values\n");
+    }
 }
