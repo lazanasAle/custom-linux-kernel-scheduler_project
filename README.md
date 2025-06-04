@@ -41,17 +41,6 @@ A prebuilt `bzImage` is also included in this repository under:
 
 you can use this `bzImage` in an emulator with qemu providing the equivalent initramfs.
 
---- 
-
-## BPF-uproach Folder
-
-This folder contains:
-
-Kernel modifications including additional system calls
-
-A BPF program implementing the scheduling logic
-
-Installation and usage steps are the same as the custom kernel installation. You can insert the BPF scheduler as a kernel module and test its functionality.
 
 ---
 

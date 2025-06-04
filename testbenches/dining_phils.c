@@ -3,7 +3,7 @@
 #include <semaphore.h>
 #include <stdlib.h>
 #include <sys/syscall.h>
-#include <sched.h>
+#include <linux/sched.h>
 #include <pthread.h>
 #include <sys/wait.h>
 #include <time.h>
@@ -98,7 +98,7 @@ int main(){
         wait(nullptr);
         struct timespec begin;
         clock_gettime(CLOCK_MONOTONIC, &begin);
-        proc_run(SCHED_OTHER);
+        proc_run(SCHED_NORMAL);
         struct timespec ending;
         clock_gettime(CLOCK_MONOTONIC, &ending);
         double passed = (ending.tv_sec-begin.tv_sec)+(ending.tv_nsec-begin.tv_nsec)/1e9;
