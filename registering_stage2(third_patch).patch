@@ -1,0 +1,44 @@
+diff --git a/kernel/sched/core.c b/kernel/sched/core.c
+index 3c7c942c7..9eedf6538 100644
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -7108,6 +7108,9 @@ const struct sched_class *__setscheduler_class(int policy, int prio)
+ 	if (rt_prio(prio))
+ 		return &rt_sched_class;
+ 
++    if(hvf_policy(policy))
++        return &hvf_sched_class;
++
+ #ifdef CONFIG_SCHED_CLASS_EXT
+ 	if (task_should_scx(policy))
+ 		return &ext_sched_class;
+diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
+index 1aa65a0ac..9de703227 100644
+--- a/kernel/sched/sched.h
++++ b/kernel/sched/sched.h
+@@ -217,10 +217,16 @@ static inline int dl_policy(int policy)
+ 	return policy == SCHED_DEADLINE;
+ }
+ 
++static inline int hvf_policy(int policy)
++{
++	return policy == SCHED_HVF;
++}
++
+ static inline bool valid_policy(int policy)
+ {
+ 	return idle_policy(policy) || fair_policy(policy) ||
+-		rt_policy(policy) || dl_policy(policy);
++		rt_policy(policy) || dl_policy(policy) ||
++	       hvf_policy(policy);
+ }
+ 
+ static inline int task_has_idle_policy(struct task_struct *p)
+@@ -2542,6 +2548,7 @@ extern const struct sched_class stop_sched_class;
+ extern const struct sched_class dl_sched_class;
+ extern const struct sched_class rt_sched_class;
+ extern const struct sched_class fair_sched_class;
++extern const struct sched_class hvf_sched_class;
+ extern const struct sched_class idle_sched_class;
+ 
+ /*
