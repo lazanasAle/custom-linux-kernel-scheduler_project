@@ -78,6 +78,7 @@
 struct rq;
 struct cfs_rq;
 struct rt_rq;
+struct hvf_rq;
 struct sched_group;
 struct cpuidle_state;
 
@@ -653,6 +654,14 @@ struct balance_callback {
 	void (*func)(struct rq *rq);
 };
 
+/* HVF-related fields in a runqueue */
+
+struct hvf_rq {
+	struct rb_root	hvf_task_queue;
+	struct sched_hvf_entity *max_value_entity;
+};
+
+
 /* CFS-related fields in a runqueue */
 struct cfs_rq {
 	struct load_weight	load;
@@ -1141,6 +1150,7 @@ struct rq {
 	struct cfs_rq		cfs;
 	struct rt_rq		rt;
 	struct dl_rq		dl;
+	struct hvf_rq		hvf;
 #ifdef CONFIG_SCHED_CLASS_EXT
 	struct scx_rq		scx;
 #endif
@@ -2721,6 +2731,7 @@ extern void update_max_interval(void);
 extern void init_sched_dl_class(void);
 extern void init_sched_rt_class(void);
 extern void init_sched_fair_class(void);
+extern void init_sched_hvf_class(void);
 
 extern void resched_curr(struct rq *rq);
 extern void resched_curr_lazy(struct rq *rq);
@@ -3193,6 +3204,7 @@ static inline void resched_latency_warn(int cpu, u64 latency) { }
 extern void init_cfs_rq(struct cfs_rq *cfs_rq);
 extern void init_rt_rq(struct rt_rq *rt_rq);
 extern void init_dl_rq(struct dl_rq *dl_rq);
+extern void init_hvf_rq(struct hvf_rq *hvf_rq);
 
 extern void cfs_bandwidth_usage_inc(void);
 extern void cfs_bandwidth_usage_dec(void);

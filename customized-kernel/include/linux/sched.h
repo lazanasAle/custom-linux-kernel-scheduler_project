@@ -725,6 +725,12 @@ struct sched_dl_entity {
 #endif
 };
 
+
+struct sched_hvf_entity {
+	struct rb_node run_node;
+	long sched_value;
+};
+
 #ifdef CONFIG_UCLAMP_TASK
 /* Number of utilization clamp buckets (shorter alias) */
 #define UCLAMP_BUCKETS CONFIG_UCLAMP_BUCKETS_COUNT
@@ -851,6 +857,7 @@ struct task_struct {
 	struct sched_rt_entity		rt;
 	struct sched_dl_entity		dl;
 	struct sched_dl_entity		*dl_server;
+	struct sched_hvf_entity		hvf;
 #ifdef CONFIG_SCHED_CLASS_EXT
 	struct sched_ext_entity		scx;
 #endif

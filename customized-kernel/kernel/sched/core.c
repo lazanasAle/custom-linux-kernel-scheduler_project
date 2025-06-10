@@ -8487,10 +8487,11 @@ void __init sched_init(void)
 #endif
 	BUG_ON(!sched_class_above(&dl_sched_class, &rt_sched_class));
 	BUG_ON(!sched_class_above(&rt_sched_class, &fair_sched_class));
-	BUG_ON(!sched_class_above(&fair_sched_class, &idle_sched_class));
+    BUG_ON(!sched_class_above(&fair_sched_class, &hvf_sched_class));
+    BUG_ON(!sched_class_above(&hvf_sched_class, &idle_sched_class));
 #ifdef CONFIG_SCHED_CLASS_EXT
 	BUG_ON(!sched_class_above(&fair_sched_class, &ext_sched_class));
-	BUG_ON(!sched_class_above(&ext_sched_class, &idle_sched_class));
+    BUG_ON(!sched_class_above(&ext_sched_class, &hvf_sched_class));
 #endif
 
 	wait_bit_init();
@@ -8556,6 +8557,7 @@ void __init sched_init(void)
 		init_cfs_rq(&rq->cfs);
 		init_rt_rq(&rq->rt);
 		init_dl_rq(&rq->dl);
+        init_hvf_rq(&rq->hvf);
 #ifdef CONFIG_FAIR_GROUP_SCHED
 		INIT_LIST_HEAD(&rq->leaf_cfs_rq_list);
 		rq->tmp_alone_branch = &rq->leaf_cfs_rq_list;
