@@ -17,12 +17,15 @@ bool hvf_rq_rbtree_insert(struct rb_root *root, struct sched_hvf_entity *se);
 
 const struct sched_class hvf_sched_class;
 
+static void
+enqueue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
 
+}
 
 
 
 DEFINE_SCHED_CLASS(hvf)={
-
+	.enqueue_task = enqueue_task_hvf
 };
 
 
@@ -30,7 +33,6 @@ DEFINE_SCHED_CLASS(hvf)={
 void init_hvf_rq(struct hvf_rq *hvf_rq){
 	hvf_rq->hvf_task_queue = RB_ROOT;
 	hvf_rq->max_value_entity = NULL;
-
 }
 
 long compute_sched_value(struct task_struct *p){
@@ -66,3 +68,7 @@ bool hvf_rq_rbtree_insert(struct rb_root *root, struct sched_hvf_entity *se){
 
 	return true;
 }
+
+
+
+
