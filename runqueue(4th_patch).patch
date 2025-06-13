@@ -223,3 +223,22 @@ index e0e95a3c5..b41c54fc9 100644
 +
 +
 +
+diff --git a/kernel/sched/hvf.c b/kernel/sched/hvf.c
+index b41c54fc9..110c3bca6 100644
+--- a/kernel/sched/hvf.c
++++ b/kernel/sched/hvf.c
+@@ -17,6 +17,14 @@ bool hvf_rq_rbtree_insert(struct rb_root *root, struct sched_hvf_entity *se);
+ 
+ const struct sched_class hvf_sched_class;
+ 
++inline void atomic_insert(struct rq *rq, struct sched_hvf_entity *se){
++	struct rq_flags flags;
++	rq_lock(rq, &flags);
++	hvf_rq_rbtree_insert(&rq->hvf.hvf_task_queue, se);
++	rq->hvf.max_value_entity = rb_entry(rb_first(&rq->hvf.hvf_task_queue), struct sched_hvf_entity, run_node);
++	rq_unlock(rq, &flags);
++}
++
+ static void
+ enqueue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
+ 
