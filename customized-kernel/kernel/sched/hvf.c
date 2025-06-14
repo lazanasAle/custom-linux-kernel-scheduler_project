@@ -31,7 +31,7 @@ static void
 enqueue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
 	struct hvf_rq *hvf_rq = &rq->hvf;
 	struct sched_hvf_entity *se_hvf = &p->hvf;
-	if(flags & (ENQUEUE_WAKEUP | ENQUEUE_INITIAL | ENQUEUE_MIGRATED)){
+	if(flags & (ENQUEUE_WAKEUP | ENQUEUE_INITIAL | ENQUEUE_MIGRATED | ENQUEUE_RESTORE)){
 		long sval = compute_sched_value(p);
 		pr_info("enqueuing entity with value: %ld\n", sval);
 	}
