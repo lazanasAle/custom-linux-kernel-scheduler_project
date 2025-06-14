@@ -20,11 +20,8 @@ const struct sched_class hvf_sched_class;
 
 static inline
 void enqueue_entity(struct rq *rq, struct sched_hvf_entity *se){
-	struct rq_flags flags;
-	rq_lock(rq, &flags);
 	hvf_rq_rbtree_insert(&rq->hvf.hvf_task_queue, se);
 	rq->hvf.max_value_entity = rb_entry(rb_first(&rq->hvf.hvf_task_queue), struct sched_hvf_entity, run_node);
-	rq_unlock(rq, &flags);
 }
 
 static void
@@ -35,8 +32,11 @@ enqueue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
 		long sval = compute_sched_value(p);
 		pr_info("enqueuing entity with value: %ld\n", sval);
 	}
-	if(se_hvf != hvf_rq->curr)
+	if(se_hvf != hvf_rq->curr){
 		enqueue_entity(rq, se_hvf);
+		pr_info("entity enqueued\n");
+	}
+	pr_info("done enquing\n");
 }
 
 
