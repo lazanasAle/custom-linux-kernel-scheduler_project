@@ -1,6 +1,7 @@
 #include <linux/sched.h>
 #include <linux/rbtree.h>
 #include <linux/cpumask.h>
+#include <linux/kernel.h>
 #include <linux/types.h>
 #include <linux/timekeeping.h>
 #include <asm-generic/errno.h>
@@ -17,7 +18,8 @@ bool hvf_rq_rbtree_insert(struct rb_root *root, struct sched_hvf_entity *se);
 
 const struct sched_class hvf_sched_class;
 
-inline void atomic_insert(struct rq *rq, struct sched_hvf_entity *se){
+static inline
+void enqueue_entity(struct rq *rq, struct sched_hvf_entity *se){
 	struct rq_flags flags;
 	rq_lock(rq, &flags);
 	hvf_rq_rbtree_insert(&rq->hvf.hvf_task_queue, se);
@@ -27,7 +29,14 @@ inline void atomic_insert(struct rq *rq, struct sched_hvf_entity *se){
 
 static void
 enqueue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
-
+	struct hvf_rq *hvf_rq = &rq->hvf;
+	struct sched_hvf_entity *se_hvf = &p->hvf;
+	if(flags & (ENQUEUE_WAKEUP | ENQUEUE_INITIAL | ENQUEUE_MIGRATED)){
+		long sval = compute_sched_value(p);
+		pr_info("enqueuing entity with value: %ld\n", sval);
+	}
+	if(se_hvf != hvf_rq->curr)
+		enqueue_entity(rq, se_hvf);
 }
 
 

@@ -659,6 +659,7 @@ struct balance_callback {
 struct hvf_rq {
 	struct rb_root	hvf_task_queue;
 	struct sched_hvf_entity *max_value_entity;
+	struct sched_hvf_entity *curr;
 };
 
 
