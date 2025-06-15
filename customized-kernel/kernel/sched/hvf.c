@@ -20,8 +20,9 @@ const struct sched_class hvf_sched_class;
 
 static inline
 void enqueue_entity(struct rq *rq, struct sched_hvf_entity *se){
-	hvf_rq_rbtree_insert(&rq->hvf.hvf_task_queue, se);
+	bool  inserted = hvf_rq_rbtree_insert(&rq->hvf.hvf_task_queue, se);
 	rq->hvf.max_value_entity = rb_entry(rb_last(&rq->hvf.hvf_task_queue), struct sched_hvf_entity, run_node);
+	pr_info("Node inserted: %d i have max: %ld\n", inserted, rq->hvf.max_value_entity->sched_value);
 }
 
 static void
