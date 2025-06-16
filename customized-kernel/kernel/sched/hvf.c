@@ -20,24 +20,19 @@ const struct sched_class hvf_sched_class;
 
 static inline
 void enqueue_entity(struct rq *rq, struct sched_hvf_entity *se){
-	bool  inserted = hvf_rq_rbtree_insert(&rq->hvf.hvf_task_queue, se);
+	hvf_rq_rbtree_insert(&rq->hvf.hvf_task_queue, se);
 	rq->hvf.max_value_entity = rb_entry(rb_last(&rq->hvf.hvf_task_queue), struct sched_hvf_entity, run_node);
-	pr_info("Node inserted: %d i have max: %ld\n", inserted, rq->hvf.max_value_entity->sched_value);
 }
 
 static void
 enqueue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
 	struct hvf_rq *hvf_rq = &rq->hvf;
 	struct sched_hvf_entity *se_hvf = &p->hvf;
-	if(flags & (ENQUEUE_WAKEUP | ENQUEUE_INITIAL | ENQUEUE_MIGRATED | ENQUEUE_RESTORE)){
-		long sval = compute_sched_value(p);
-		pr_info("enqueuing entity with value: %ld\n", sval);
-	}
-	if(se_hvf != hvf_rq->curr){
+	if(flags & (ENQUEUE_WAKEUP | ENQUEUE_INITIAL | ENQUEUE_MIGRATED | ENQUEUE_RESTORE))
+		compute_sched_value(p);
+
+	if(se_hvf != hvf_rq->curr)
 		enqueue_entity(rq, se_hvf);
-		pr_info("entity enqueued\n");
-	}
-	pr_info("done enquing\n");
 }
 
 
