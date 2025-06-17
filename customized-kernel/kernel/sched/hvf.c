@@ -3,16 +3,19 @@
 #include <linux/cpumask.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
+#include <linux/sched/signal.h>
 #include <linux/timekeeping.h>
 #include <asm-generic/errno.h>
 #include "sched.h"
 
-#define M 1000
+#define K 1000
 #define H 100
 
 
 long compute_sched_value(struct task_struct *p);
+void init_sched_hvf_entity(struct sched_hvf_entity *se);
 bool hvf_rq_rbtree_insert(struct rb_root *root, struct sched_hvf_entity *se);
+bool exceeded_time(struct task_struct *p);
 
 
 
@@ -30,6 +33,15 @@ enqueue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
 	struct sched_hvf_entity *se_hvf = &p->hvf;
 	if(flags & (ENQUEUE_WAKEUP | ENQUEUE_INITIAL | ENQUEUE_MIGRATED | ENQUEUE_RESTORE))
 		compute_sched_value(p);
+
+	if(flags & ENQUEUE_INITIAL)
+		init_sched_hvf_entity(se_hvf);
+	else{
+		if(exceeded_time(p) && se_hvf != hvf_rq->curr){
+			send_sig(SIGKILL, p, 0);
+			return;
+		}
+	}
 
 	if(se_hvf != hvf_rq->curr)
 		enqueue_entity(rq, se_hvf);
@@ -51,9 +63,9 @@ void init_hvf_rq(struct hvf_rq *hvf_rq){
 long compute_sched_value(struct task_struct *p){
 	struct timespec64 now;
 	ktime_get_real_ts64(&now);
-	const long D1 = p->deadline_1*M;
-	const long D2 = p->deadline_2*M;
-	const long X = now.tv_sec*M+p->computation_time;
+	const long D1 = p->deadline_1*K;
+	const long D2 = p->deadline_2*K;
+	const long X = now.tv_sec*K+now.tv_nsec/(K*K)+p->computation_time;
 	const long V = (X<D1)? H : (D2<X)? 0 : (D2-X)*H/(D2-D1);
 
 	p->hvf.sched_value = V;
@@ -80,6 +92,23 @@ bool hvf_rq_rbtree_insert(struct rb_root *root, struct sched_hvf_entity *se){
 	rb_insert_color(&se->run_node, root);
 
 	return true;
+}
+
+void init_sched_hvf_entity(struct sched_hvf_entity *se){
+	struct timespec64 now;
+	ktime_get_real_ts64(&now);
+	se->first_time = now.tv_sec*K + now.tv_nsec/(K*K);
+}
+
+bool exceeded_time(struct task_struct *p){
+	struct sched_hvf_entity *se_hvf = &p->hvf;
+	struct timespec64 now;
+	ktime_get_real_ts64(&now);
+	long this_time = now.tv_sec*K + now.tv_nsec/(K*K);
+
+	long usable_time = se_hvf->first_time + p->computation_time;
+
+	return(this_time>usable_time);
 }
 
 
