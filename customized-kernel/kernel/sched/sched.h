@@ -1612,6 +1612,7 @@ static inline struct cfs_rq *group_cfs_rq(struct sched_entity *grp)
 #else /* !CONFIG_FAIR_GROUP_SCHED: */
 
 #define task_of(_se)		container_of(_se, struct task_struct, se)
+#define task_hvf_of(_hvf)	container_of(_hvf, struct task_struct, hvf)
 
 static inline struct cfs_rq *task_cfs_rq(const struct task_struct *p)
 {
