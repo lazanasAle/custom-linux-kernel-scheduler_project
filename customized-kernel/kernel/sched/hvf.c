@@ -34,7 +34,7 @@ enqueue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
 	if(flags & (ENQUEUE_WAKEUP | ENQUEUE_INITIAL | ENQUEUE_MIGRATED | ENQUEUE_RESTORE))
 		compute_sched_value(p);
 
-	if(flags & ENQUEUE_INITIAL)
+	if(flags & (ENQUEUE_INITIAL | ENQUEUE_CHANGED))
 		init_sched_hvf_entity(se_hvf);
 	else{
 		if(exceeded_time(p) && se_hvf != hvf_rq->curr){
