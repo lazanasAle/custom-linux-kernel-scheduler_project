@@ -16,6 +16,8 @@ long compute_sched_value(struct task_struct *p);
 void init_sched_hvf_entity(struct sched_hvf_entity *se);
 bool hvf_rq_rbtree_insert(struct rb_root *root, struct sched_hvf_entity *se);
 bool exceeded_time(struct task_struct *p);
+void update_latest_se_hvf(struct sched_hvf_entity *se);
+void update_used_se_hvf(struct sched_hvf_entity *se);
 
 
 
@@ -37,6 +39,8 @@ enqueue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
 	if(flags & (ENQUEUE_INITIAL | ENQUEUE_CHANGED))
 		init_sched_hvf_entity(se_hvf);
 	else{
+		update_latest_se_hvf(se_hvf);
+
 		if(exceeded_time(p) && se_hvf != hvf_rq->curr){
 			send_sig(SIGKILL, p, 0);
 			return;
@@ -55,12 +59,12 @@ DEFINE_SCHED_CLASS(hvf)={
 
 
 
-void init_hvf_rq(struct hvf_rq *hvf_rq){
+inline void init_hvf_rq(struct hvf_rq *hvf_rq){
 	hvf_rq->hvf_task_queue = RB_ROOT;
 	hvf_rq->max_value_entity = NULL;
 }
 
-long compute_sched_value(struct task_struct *p){
+inline long compute_sched_value(struct task_struct *p){
 	struct timespec64 now;
 	ktime_get_real_ts64(&now);
 	const long D1 = p->deadline_1*K;
@@ -94,23 +98,40 @@ bool hvf_rq_rbtree_insert(struct rb_root *root, struct sched_hvf_entity *se){
 	return true;
 }
 
-void init_sched_hvf_entity(struct sched_hvf_entity *se){
+inline void init_sched_hvf_entity(struct sched_hvf_entity *se){
 	struct timespec64 now;
 	ktime_get_real_ts64(&now);
 	se->first_time = now.tv_sec*K + now.tv_nsec/(K*K);
+	se->latest_time = se->first_time;
+	se->time_used=0;
 }
 
-bool exceeded_time(struct task_struct *p){
+inline bool exceeded_time(struct task_struct *p){
 	struct sched_hvf_entity *se_hvf = &p->hvf;
+	long used = se_hvf->time_used;
+	long ctime = p->computation_time;
+
+	return(used>ctime);
+}
+
+
+inline void update_latest_se_hvf(struct sched_hvf_entity *se){
 	struct timespec64 now;
 	ktime_get_real_ts64(&now);
-	long this_time = now.tv_sec*K + now.tv_nsec/(K*K);
-
-	long usable_time = se_hvf->first_time + p->computation_time;
-
-	return(this_time>usable_time);
+	se->latest_time = now.tv_sec*K + now.tv_nsec/(K*K);
 }
 
+
+
+/*this function shall be called in dequeue_task_hvf right before dequing the entity*/
+
+inline void update_used_se_hvf(struct sched_hvf_entity *se){
+	struct timespec64 now;
+	ktime_get_real_ts64(&now);
+
+	long current_time = now.tv_sec*K + now.tv_nsec/(K*K);
+	se->time_used += current_time - se->latest_time;
+}
 
 
 

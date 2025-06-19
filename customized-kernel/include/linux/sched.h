@@ -730,6 +730,8 @@ struct sched_hvf_entity {
 	struct rb_node run_node;
 	long sched_value;
 	long first_time;
+	long latest_time;
+	long time_used;
 };
 
 #ifdef CONFIG_UCLAMP_TASK
