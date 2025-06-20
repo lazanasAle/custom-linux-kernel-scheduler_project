@@ -1584,6 +1584,8 @@ static inline void update_idle_core(struct rq *rq)
 static inline void update_idle_core(struct rq *rq) { }
 #endif
 
+#define task_hvf_of(_hvf)	container_of(_hvf, struct task_struct, hvf)
+
 #ifdef CONFIG_FAIR_GROUP_SCHED
 
 static inline struct task_struct *task_of(struct sched_entity *se)
@@ -1612,7 +1614,7 @@ static inline struct cfs_rq *group_cfs_rq(struct sched_entity *grp)
 #else /* !CONFIG_FAIR_GROUP_SCHED: */
 
 #define task_of(_se)		container_of(_se, struct task_struct, se)
-#define task_hvf_of(_hvf)	container_of(_hvf, struct task_struct, hvf)
+
 
 static inline struct cfs_rq *task_cfs_rq(const struct task_struct *p)
 {
