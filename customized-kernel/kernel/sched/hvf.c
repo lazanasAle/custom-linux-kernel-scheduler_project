@@ -42,7 +42,7 @@ static struct task_struct *pick_task_hvf(struct rq *rq){
 
 static void enqueue_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se){
 	hvf_rq_rbtree_insert(&hvf_rq->hvf_task_queue, se);
-
+	se->on_rq = true;
 	struct sched_hvf_entity *max_entity = hvf_rq->max_value_entity;
 
 	if(!max_entity){
@@ -88,6 +88,7 @@ static bool dequeue_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *s
 	}
 
 	rb_erase(&se->run_node, &hvf_rq->hvf_task_queue);
+	se->on_rq=false;
 
 	return true;
 }

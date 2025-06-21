@@ -732,6 +732,7 @@ struct sched_hvf_entity {
 	long first_time;
 	long latest_time;
 	long time_used;
+	bool on_rq;
 };
 
 #ifdef CONFIG_UCLAMP_TASK
