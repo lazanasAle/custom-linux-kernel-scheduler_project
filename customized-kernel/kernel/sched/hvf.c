@@ -40,7 +40,7 @@ static struct task_struct *pick_task_hvf(struct rq *rq){
 	return task_hvf_of(se_hvf);
 }
 
-static void enqueue_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se){
+static void enqueue_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se){
 	hvf_rq_rbtree_insert(&hvf_rq->hvf_task_queue, se);
 
 	struct sched_hvf_entity *max_entity = hvf_rq->max_value_entity;
@@ -73,11 +73,11 @@ enqueue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
 	}
 
 	if(se_hvf != hvf_rq->curr)
-		enqueue_entity(hvf_rq, se_hvf);
+		enqueue_hvf_entity(hvf_rq, se_hvf);
 }
 
 
-static bool dequeue_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se){
+static bool dequeue_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se){
 	update_used_se_hvf(se);
 
 	struct rb_node *max_node = &hvf_rq->max_value_entity->run_node;
@@ -99,7 +99,7 @@ dequeue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
 	struct sched_hvf_entity *se_hvf = &p->hvf;
 
 	if(se_hvf != hvf_rq->curr)
-		return dequeue_entity(hvf_rq, se_hvf);
+		return dequeue_hvf_entity(hvf_rq, se_hvf);
 	return false;
 }
 
