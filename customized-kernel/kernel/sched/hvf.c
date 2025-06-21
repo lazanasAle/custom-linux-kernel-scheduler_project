@@ -37,7 +37,6 @@ static struct task_struct *pick_task_hvf(struct rq *rq){
 	if(hvf_rq_empty(hvf_rq))
 		return NULL;
 	se_hvf = pick_next_entity_hvf(hvf_rq);
-	pr_info("task found called\n");
 	return task_hvf_of(se_hvf);
 }
 
