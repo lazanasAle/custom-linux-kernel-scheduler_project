@@ -49,7 +49,7 @@ static struct task_struct *pick_next_task_hvf(struct rq *rq, struct task_struct 
 
 	struct task_struct *next = pick_task_hvf(rq);
 	if(!next)
-		return rq->idle;
+		return NULL;
 	return next;
 }
 
