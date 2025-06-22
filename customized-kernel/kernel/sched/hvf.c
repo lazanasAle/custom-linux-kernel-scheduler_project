@@ -132,13 +132,41 @@ static void set_next_task_hvf(struct rq *rq, struct task_struct *p, bool first){
 }
 
 
+static void
+switched_to_hvf(struct rq *rq, struct task_struct *p){
+	// TODO
+}
+
+static void
+switched_from_hvf(struct rq *rq, struct task_struct *p){
+	// TODO
+}
+
+static void task_tick_hvf(struct rq *rq, struct task_struct *curr, int queued){
+	// TODO
+}
+
+static void task_dead_hvf(struct task_struct *p){
+	// TODO
+}
+
+static void put_prev_task_hvf(struct rq *rq, struct task_struct *prev, struct task_struct *next){
+	// TODO
+}
+
+
 
 DEFINE_SCHED_CLASS(hvf)={
 	.enqueue_task = enqueue_task_hvf,
 	.pick_task = pick_task_hvf,
 	.dequeue_task = dequeue_task_hvf,
 	.set_next_task = set_next_task_hvf,
-	.pick_next_task = pick_next_task_hvf
+	.pick_next_task = pick_next_task_hvf,
+	.switched_to = switched_to_hvf,
+	.switched_from = switched_from_hvf,
+	.task_tick = task_tick_hvf,
+	.task_dead = task_dead_hvf,
+	.put_prev_task = put_prev_task_hvf
 };
 
 
