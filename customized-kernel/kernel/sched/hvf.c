@@ -25,7 +25,7 @@ bool hvf_rq_empty(struct hvf_rq *hvf_rq);
 const struct sched_class hvf_sched_class;
 
 static inline
-struct sched_hvf_entity *pick_next_entity_hvf(struct hvf_rq *hvf_rq){
+struct sched_hvf_entity *pick_entity_hvf(struct hvf_rq *hvf_rq){
 	return hvf_rq->max_value_entity;
 }
 
@@ -36,8 +36,21 @@ static struct task_struct *pick_task_hvf(struct rq *rq){
 	hvf_rq = &rq->hvf;
 	if(hvf_rq_empty(hvf_rq))
 		return NULL;
-	se_hvf = pick_next_entity_hvf(hvf_rq);
+	se_hvf = pick_entity_hvf(hvf_rq);
 	return task_hvf_of(se_hvf);
+}
+
+
+static struct task_struct *pick_next_task_hvf(struct rq *rq, struct task_struct *prev){
+	if(prev->sched_class == &hvf_sched_class){
+		struct sched_hvf_entity *prev_hvf = &prev->hvf;
+		update_used_se_hvf(prev_hvf);
+	}
+
+	struct task_struct *next = pick_task_hvf(rq);
+	if(!next)
+		return rq->idle;
+	return next;
 }
 
 static void enqueue_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se){
@@ -64,8 +77,6 @@ enqueue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
 	if(flags & (ENQUEUE_INITIAL | ENQUEUE_CHANGED))
 		init_sched_hvf_entity(se_hvf);
 	else{
-		update_latest_se_hvf(se_hvf);
-
 		if(exceeded_time(p) && (se_hvf != hvf_rq->curr) && pid_alive(p)){
 			send_sig(SIGKILL, p, 0);
 			return;
@@ -78,8 +89,6 @@ enqueue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
 
 
 static bool dequeue_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se){
-	update_used_se_hvf(se);
-
 	struct rb_node *max_node = &hvf_rq->max_value_entity->run_node;
 
 	if(max_node == &se->run_node){
@@ -104,12 +113,32 @@ dequeue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
 	return false;
 }
 
+static void
+set_next_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se){
+	if(se->on_rq)
+		dequeue_hvf_entity(hvf_rq, se);
+
+	update_latest_se_hvf(se);
+
+	hvf_rq->curr = se;
+}
+
+
+static void set_next_task_hvf(struct rq *rq, struct task_struct *p, bool first){
+	struct sched_hvf_entity *se_hvf = &p->hvf;
+	struct hvf_rq *hvf_rq = &rq->hvf;
+
+	set_next_hvf_entity(hvf_rq, se_hvf);
+}
+
 
 
 DEFINE_SCHED_CLASS(hvf)={
 	.enqueue_task = enqueue_task_hvf,
 	.pick_task = pick_task_hvf,
-	.dequeue_task = dequeue_task_hvf
+	.dequeue_task = dequeue_task_hvf,
+	.set_next_task = set_next_task_hvf,
+	.pick_next_task = pick_next_task_hvf
 };
 
 
@@ -183,7 +212,7 @@ inline bool hvf_rq_empty(struct hvf_rq *hvf_rq){
 }
 
 
-/*this function shall be called in dequeue_task_hvf right before dequeuing the entity*/
+/*this function shall be called in pick_next_task for the previous task*/
 
 inline void update_used_se_hvf(struct sched_hvf_entity *se){
 	struct timespec64 now;
