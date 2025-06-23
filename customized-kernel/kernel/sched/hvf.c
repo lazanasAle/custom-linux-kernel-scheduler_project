@@ -19,6 +19,7 @@ bool exceeded_time(struct task_struct *p);
 void update_latest_se_hvf(struct sched_hvf_entity *se);
 void update_used_se_hvf(struct sched_hvf_entity *se);
 bool hvf_rq_empty(struct hvf_rq *hvf_rq);
+long time_slice(long sched_value);
 
 
 
@@ -143,7 +144,14 @@ switched_from_hvf(struct rq *rq, struct task_struct *p){
 }
 
 static void task_tick_hvf(struct rq *rq, struct task_struct *curr, int queued){
-	// TODO
+	struct sched_hvf_entity *curr_ent = &curr->hvf;
+	long slice = time_slice(curr_ent->sched_value);
+
+	curr_ent->runtime += TICK_NSEC;
+
+	if(curr_ent->runtime >= slice*K*K)
+		resched_curr(rq);
+
 }
 
 static void task_dead_hvf(struct task_struct *p){
@@ -231,6 +239,7 @@ inline void update_latest_se_hvf(struct sched_hvf_entity *se){
 	struct timespec64 now;
 	ktime_get_real_ts64(&now);
 	se->latest_time = now.tv_sec*K + now.tv_nsec/(K*K);
+	se->runtime = 0;
 }
 
 
@@ -248,6 +257,20 @@ inline void update_used_se_hvf(struct sched_hvf_entity *se){
 
 	long current_time = now.tv_sec*K + now.tv_nsec/(K*K);
 	se->time_used += current_time - se->latest_time;
+}
+
+long time_slice(long sched_value){
+	const int max_slice = K;
+	const int min_slice = 10;
+
+	if(sched_value < 1)
+		sched_value = 1;
+	if(sched_value > K)
+		sched_value = K;
+	long scaled_value = K-sched_value;
+	long range = max_slice - min_slice;
+
+	return (((scaled_value*range)/K)+min_slice);
 }
 
 
