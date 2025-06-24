@@ -162,8 +162,19 @@ static void task_dead_hvf(struct task_struct *p){
 	// TODO
 }
 
+static void
+put_prev_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se){
+	if(!se->on_rq)
+		enqueue_hvf_entity(hvf_rq, se);
+
+	hvf_rq->curr = NULL;
+}
+
 static void put_prev_task_hvf(struct rq *rq, struct task_struct *prev, struct task_struct *next){
-	// TODO
+	struct sched_hvf_entity *se_hvf = &prev->hvf;
+	struct hvf_rq *hvf_rq = &rq->hvf;
+
+	put_prev_hvf_entity(hvf_rq, se_hvf);
 }
 
 
