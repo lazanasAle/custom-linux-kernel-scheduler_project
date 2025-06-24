@@ -251,7 +251,8 @@ inline void init_sched_hvf_entity(struct sched_hvf_entity *se){
 	ktime_get_real_ts64(&now);
 	se->first_time = now.tv_sec*K + now.tv_nsec/(K*K);
 	se->latest_time = se->first_time;
-	se->time_used=0;
+	se->time_used = 0;
+	se->cpu_answers = 0;
 }
 
 inline bool exceeded_time(struct task_struct *p){
@@ -268,6 +269,8 @@ inline void update_latest_se_hvf(struct sched_hvf_entity *se){
 	ktime_get_real_ts64(&now);
 	se->latest_time = now.tv_sec*K + now.tv_nsec/(K*K);
 	se->runtime = 0;
+	se->cpu_answers++;
+	se->cpu_first_answer = (se->cpu_answers == 1)? se->latest_time : se->cpu_first_answer;
 }
 
 

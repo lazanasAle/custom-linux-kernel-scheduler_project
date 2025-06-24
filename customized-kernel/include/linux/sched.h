@@ -735,6 +735,8 @@ struct sched_hvf_entity {
 	long time_used;
 	long runtime;
 	bool on_rq;
+	int cpu_answers;
+	long cpu_first_answer;
 };
 
 #ifdef CONFIG_UCLAMP_TASK
