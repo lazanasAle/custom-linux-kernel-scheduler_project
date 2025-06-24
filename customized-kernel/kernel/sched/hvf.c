@@ -97,8 +97,8 @@ static bool dequeue_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *s
 	struct rb_node *max_node = &hvf_rq->max_value_entity->run_node;
 
 	if(max_node == &se->run_node){
-		struct rb_node *next_node = rb_next(&se->run_node);
-		hvf_rq->max_value_entity = rb_entry(next_node, struct sched_hvf_entity, run_node);
+		struct rb_node *prev_node = rb_prev(&se->run_node);
+		hvf_rq->max_value_entity = rb_entry(prev_node, struct sched_hvf_entity, run_node);
 	}
 
 	rb_erase(&se->run_node, &hvf_rq->hvf_task_queue);
@@ -205,7 +205,7 @@ inline long compute_init_sched_value(struct task_struct *p){
 inline long reduce_sched_value(struct sched_hvf_entity *se){
 	long rate = se->init_sched_value;
 	long old_value = se->curr_sched_value;
-	long new_value = old_value - (rate/100)*old_value;
+	long new_value = old_value - (rate*old_value/100);
 	new_value = (new_value>0)? new_value : (old_value == 0)? 10: 0;
 
 	se->curr_sched_value = new_value;
