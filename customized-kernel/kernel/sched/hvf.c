@@ -298,7 +298,7 @@ long time_slice(long sched_value){
 		sched_value = 1;
 	if(sched_value > K)
 		sched_value = K;
-	long scaled_value = K-sched_value;
+	long scaled_value = sched_value;
 	long range = max_slice - min_slice;
 
 	return (((scaled_value*range)/K)+min_slice);
