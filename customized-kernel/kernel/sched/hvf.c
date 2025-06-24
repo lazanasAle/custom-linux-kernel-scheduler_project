@@ -12,7 +12,8 @@
 #define H 100
 
 
-long compute_sched_value(struct task_struct *p);
+long compute_init_sched_value(struct task_struct *p);
+long reduce_sched_value(struct sched_hvf_entity *se);
 void init_sched_hvf_entity(struct sched_hvf_entity *se);
 bool hvf_rq_rbtree_insert(struct rb_root *root, struct sched_hvf_entity *se);
 bool exceeded_time(struct task_struct *p);
@@ -64,7 +65,7 @@ static void enqueue_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *s
 		return;
 	}
 
-	if(max_entity->sched_value < se->sched_value)
+	if(max_entity->curr_sched_value < se->curr_sched_value)
 		hvf_rq->max_value_entity = rb_entry(rb_last(&hvf_rq->hvf_task_queue), struct sched_hvf_entity, run_node);
 }
 
@@ -72,12 +73,15 @@ static void
 enqueue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
 	struct hvf_rq *hvf_rq = &rq->hvf;
 	struct sched_hvf_entity *se_hvf = &p->hvf;
-	if(flags & (ENQUEUE_WAKEUP | ENQUEUE_INITIAL | ENQUEUE_MIGRATED | ENQUEUE_RESTORE))
-		compute_sched_value(p);
 
-	if(flags & (ENQUEUE_INITIAL | ENQUEUE_CHANGED))
+
+	if(flags & (ENQUEUE_INITIAL | ENQUEUE_CHANGED)){
 		init_sched_hvf_entity(se_hvf);
+		compute_init_sched_value(p);
+	}
 	else{
+		if(flags & (ENQUEUE_WAKEUP | ENQUEUE_MIGRATED | ENQUEUE_RESTORE))
+			reduce_sched_value(se_hvf);
 		if(exceeded_time(p) && (se_hvf != hvf_rq->curr) && pid_alive(p)){
 			send_sig(SIGKILL, p, 0);
 			return;
@@ -145,7 +149,7 @@ switched_from_hvf(struct rq *rq, struct task_struct *p){
 
 static void task_tick_hvf(struct rq *rq, struct task_struct *curr, int queued){
 	struct sched_hvf_entity *curr_ent = &curr->hvf;
-	long slice = time_slice(curr_ent->sched_value);
+	long slice = time_slice(curr_ent->curr_sched_value);
 
 	curr_ent->runtime += TICK_NSEC;
 
@@ -184,17 +188,29 @@ inline void init_hvf_rq(struct hvf_rq *hvf_rq){
 	hvf_rq->max_value_entity = NULL;
 }
 
-inline long compute_sched_value(struct task_struct *p){
-	struct timespec64 now;
-	ktime_get_real_ts64(&now);
+inline long compute_init_sched_value(struct task_struct *p){
+	const long first_time = p->hvf.first_time;
 	const long D1 = p->deadline_1*K;
 	const long D2 = p->deadline_2*K;
-	const long X = now.tv_sec*K+now.tv_nsec/(K*K)+p->computation_time;
+	const long X = first_time+p->computation_time;
 	const long V = (X<D1)? H : (D2<X)? 0 : (D2-X)*H/(D2-D1);
 
-	p->hvf.sched_value = V;
+	p->hvf.init_sched_value = V;
+	p->hvf.curr_sched_value = V;
 
 	return V;
+}
+
+
+inline long reduce_sched_value(struct sched_hvf_entity *se){
+	long rate = se->init_sched_value;
+	long old_value = se->curr_sched_value;
+	long new_value = old_value - (rate/100)*old_value;
+	new_value = (new_value>0)? new_value : (old_value == 0)? 10: 0;
+
+	se->curr_sched_value = new_value;
+
+	return new_value;
 }
 
 
@@ -203,7 +219,7 @@ bool hvf_rq_rbtree_insert(struct rb_root *root, struct sched_hvf_entity *se){
 
 	while(*new_node!=NULL){
 		struct sched_hvf_entity *this_entity = container_of(*new_node, struct sched_hvf_entity, run_node);
-		int result = se->sched_value - this_entity->sched_value;
+		int result = se->curr_sched_value - this_entity->curr_sched_value;
 
 		parent = *new_node;
 		if(result<=0)
