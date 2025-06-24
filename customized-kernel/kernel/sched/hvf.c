@@ -88,7 +88,7 @@ enqueue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
 		}
 	}
 
-	if(se_hvf != hvf_rq->curr)
+	if(se_hvf != hvf_rq->curr && !se_hvf->on_rq)
 		enqueue_hvf_entity(hvf_rq, se_hvf);
 }
 
@@ -102,6 +102,7 @@ static bool dequeue_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *s
 	}
 
 	rb_erase(&se->run_node, &hvf_rq->hvf_task_queue);
+	RB_CLEAR_NODE(&se->run_node);
 	se->on_rq=false;
 
 	return true;
@@ -113,7 +114,7 @@ dequeue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
 	struct hvf_rq *hvf_rq = &rq->hvf;
 	struct sched_hvf_entity *se_hvf = &p->hvf;
 
-	if(se_hvf != hvf_rq->curr)
+	if(se_hvf != hvf_rq->curr && se_hvf->on_rq)
 		return dequeue_hvf_entity(hvf_rq, se_hvf);
 	return false;
 }
@@ -159,7 +160,20 @@ static void task_tick_hvf(struct rq *rq, struct task_struct *curr, int queued){
 }
 
 static void task_dead_hvf(struct task_struct *p){
-	// TODO
+	struct rq *rq;
+	struct rq_flags rf;
+	struct sched_hvf_entity *se_hvf = &p->hvf;
+
+	rq = task_rq_lock(p, &rf);
+
+	struct hvf_rq *hvf_rq = &rq->hvf;
+	if(se_hvf->on_rq)
+		dequeue_hvf_entity(hvf_rq, se_hvf);
+
+	task_rq_unlock(rq, p, &rf);
+
+
+
 }
 
 static void
