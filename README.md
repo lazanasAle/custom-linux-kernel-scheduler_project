@@ -49,6 +49,3 @@ The testbenches folder includes user-space C programs designed to test:
 The custom scheduler’s behavior
 
 Integration of additional system calls
-
-
-(Currently only the syscalls are fully Implemented this is just a checklist)
