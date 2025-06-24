@@ -98,7 +98,7 @@ static bool dequeue_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *s
 
 	if(max_node == &se->run_node){
 		struct rb_node *prev_node = rb_prev(&se->run_node);
-		hvf_rq->max_value_entity = rb_entry(prev_node, struct sched_hvf_entity, run_node);
+		hvf_rq->max_value_entity = (prev_node!=NULL)? rb_entry(prev_node, struct sched_hvf_entity, run_node) : NULL;
 	}
 
 	rb_erase(&se->run_node, &hvf_rq->hvf_task_queue);
