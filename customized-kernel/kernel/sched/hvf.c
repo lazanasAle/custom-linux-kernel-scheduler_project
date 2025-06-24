@@ -174,7 +174,7 @@ static void put_prev_task_hvf(struct rq *rq, struct task_struct *prev, struct ta
 	struct sched_hvf_entity *se_hvf = &prev->hvf;
 	struct hvf_rq *hvf_rq = &rq->hvf;
 
-	if(task_is_running(prev) && se_hvf != hvf_rq->curr)
+	if(task_is_running(prev))
 		put_prev_hvf_entity(hvf_rq, se_hvf);
 }
 
