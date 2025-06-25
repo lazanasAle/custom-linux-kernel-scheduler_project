@@ -37,7 +37,7 @@ static struct task_struct *pick_task_hvf(struct rq *rq){
 
 	hvf_rq = &rq->hvf;
 	if(hvf_rq_empty(hvf_rq))
-		return NULL;
+		return rq->idle;
 	se_hvf = pick_entity_hvf(hvf_rq);
 	return task_hvf_of(se_hvf);
 }
@@ -52,6 +52,10 @@ static struct task_struct *pick_next_task_hvf(struct rq *rq, struct task_struct 
 	struct task_struct *next = pick_task_hvf(rq);
 	if(!next)
 		return NULL;
+	else{
+		prev->sched_class->put_prev_task(rq, prev, next);
+		next->sched_class->set_next_task(rq, next, true);
+	}
 	return next;
 }
 
@@ -133,6 +137,8 @@ set_next_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se){
 static void set_next_task_hvf(struct rq *rq, struct task_struct *p, bool first){
 	struct sched_hvf_entity *se_hvf = &p->hvf;
 	struct hvf_rq *hvf_rq = &rq->hvf;
+	if (!first)
+		return;
 
 	set_next_hvf_entity(hvf_rq, se_hvf);
 }
@@ -169,6 +175,7 @@ static void task_dead_hvf(struct task_struct *p){
 	struct hvf_rq *hvf_rq = &rq->hvf;
 	if(se_hvf->on_rq)
 		dequeue_hvf_entity(hvf_rq, se_hvf);
+	hvf_rq->curr = NULL;
 
 	task_rq_unlock(rq, p, &rf);
 
