@@ -36,7 +36,7 @@ static struct task_struct *pick_task_hvf(struct rq *rq){
 	struct hvf_rq *hvf_rq;
 
 	hvf_rq = &rq->hvf;
-	if(hvf_rq_empty(hvf_rq))
+	if (hvf_rq_empty(hvf_rq))
 		return rq->idle;
 	se_hvf = pick_entity_hvf(hvf_rq);
 	return task_hvf_of(se_hvf);
@@ -44,15 +44,15 @@ static struct task_struct *pick_task_hvf(struct rq *rq){
 
 
 static struct task_struct *pick_next_task_hvf(struct rq *rq, struct task_struct *prev){
-	if(prev->sched_class == &hvf_sched_class){
+	if (prev->sched_class == &hvf_sched_class){
 		struct sched_hvf_entity *prev_hvf = &prev->hvf;
 		update_used_se_hvf(prev_hvf);
 	}
 
 	struct task_struct *next = pick_task_hvf(rq);
-	if(!next)
+	if (!next)
 		return NULL;
-	else{
+	else {
 		prev->sched_class->put_prev_task(rq, prev, next);
 		next->sched_class->set_next_task(rq, next, true);
 	}
@@ -61,15 +61,16 @@ static struct task_struct *pick_next_task_hvf(struct rq *rq, struct task_struct 
 
 static void enqueue_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se){
 	hvf_rq_rbtree_insert(&hvf_rq->hvf_task_queue, se);
+	hvf_rq->nr_hvf_queued++;
 	se->on_rq = true;
 	struct sched_hvf_entity *max_entity = hvf_rq->max_value_entity;
 
-	if(!max_entity){
+	if (!max_entity){
 		hvf_rq->max_value_entity = rb_entry(rb_last(&hvf_rq->hvf_task_queue), struct sched_hvf_entity, run_node);
 		return;
 	}
 
-	if(max_entity->curr_sched_value < se->curr_sched_value)
+	if (max_entity->curr_sched_value < se->curr_sched_value)
 		hvf_rq->max_value_entity = rb_entry(rb_last(&hvf_rq->hvf_task_queue), struct sched_hvf_entity, run_node);
 }
 
@@ -78,35 +79,37 @@ enqueue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
 	struct hvf_rq *hvf_rq = &rq->hvf;
 	struct sched_hvf_entity *se_hvf = &p->hvf;
 
-
-	if(flags & (ENQUEUE_INITIAL | ENQUEUE_CHANGED)){
+	if (flags & (ENQUEUE_INITIAL | ENQUEUE_CHANGED)){
 		init_sched_hvf_entity(se_hvf);
 		compute_init_sched_value(p);
 	}
-	else{
-		if(flags & (ENQUEUE_WAKEUP | ENQUEUE_MIGRATED | ENQUEUE_RESTORE))
+	else {
+		if (flags & (ENQUEUE_WAKEUP | ENQUEUE_MIGRATED | ENQUEUE_RESTORE))
 			reduce_sched_value(se_hvf);
-		if(exceeded_time(p) && (se_hvf != hvf_rq->curr) && pid_alive(p)){
+		if (exceeded_time(p) && (se_hvf != hvf_rq->curr) && pid_alive(p)){
 			send_sig(SIGKILL, p, 0);
 			return;
 		}
 	}
 
-	if(se_hvf != hvf_rq->curr && !se_hvf->on_rq)
+	if (se_hvf != hvf_rq->curr && !se_hvf->on_rq){
 		enqueue_hvf_entity(hvf_rq, se_hvf);
+		rq->nr_running++;
+	}
 }
 
 
 static bool dequeue_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se){
 	struct rb_node *max_node = &hvf_rq->max_value_entity->run_node;
 
-	if(max_node == &se->run_node){
+	if (max_node == &se->run_node){
 		struct rb_node *prev_node = rb_prev(&se->run_node);
 		hvf_rq->max_value_entity = (prev_node!=NULL)? rb_entry(prev_node, struct sched_hvf_entity, run_node) : NULL;
 	}
 
 	rb_erase(&se->run_node, &hvf_rq->hvf_task_queue);
 	RB_CLEAR_NODE(&se->run_node);
+	hvf_rq->nr_hvf_queued--;
 	se->on_rq=false;
 
 	return true;
@@ -118,14 +121,18 @@ dequeue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
 	struct hvf_rq *hvf_rq = &rq->hvf;
 	struct sched_hvf_entity *se_hvf = &p->hvf;
 
-	if(se_hvf != hvf_rq->curr && se_hvf->on_rq)
-		return dequeue_hvf_entity(hvf_rq, se_hvf);
+	if (se_hvf != hvf_rq->curr && se_hvf->on_rq){
+		bool result = dequeue_hvf_entity(hvf_rq, se_hvf);
+		rq->nr_running--;
+		return result;
+	}
+
 	return false;
 }
 
 static void
 set_next_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se){
-	if(se->on_rq)
+	if (se->on_rq)
 		dequeue_hvf_entity(hvf_rq, se);
 
 	update_latest_se_hvf(se);
@@ -160,7 +167,7 @@ static void task_tick_hvf(struct rq *rq, struct task_struct *curr, int queued){
 
 	curr_ent->runtime += TICK_NSEC;
 
-	if(curr_ent->runtime >= slice*K*K)
+	if (curr_ent->runtime >= slice*K*K)
 		resched_curr(rq);
 
 }
@@ -173,19 +180,16 @@ static void task_dead_hvf(struct task_struct *p){
 	rq = task_rq_lock(p, &rf);
 
 	struct hvf_rq *hvf_rq = &rq->hvf;
-	if(se_hvf->on_rq)
+	if (se_hvf->on_rq)
 		dequeue_hvf_entity(hvf_rq, se_hvf);
 	hvf_rq->curr = NULL;
 
 	task_rq_unlock(rq, p, &rf);
-
-
-
 }
 
 static void
 put_prev_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se){
-	if(!se->on_rq)
+	if (!se->on_rq)
 		enqueue_hvf_entity(hvf_rq, se);
 
 	hvf_rq->curr = NULL;
@@ -195,23 +199,23 @@ static void put_prev_task_hvf(struct rq *rq, struct task_struct *prev, struct ta
 	struct sched_hvf_entity *se_hvf = &prev->hvf;
 	struct hvf_rq *hvf_rq = &rq->hvf;
 
-	if(task_is_running(prev))
+	if (task_is_running(prev))
 		put_prev_hvf_entity(hvf_rq, se_hvf);
 }
 
 
 
-DEFINE_SCHED_CLASS(hvf)={
-	.enqueue_task = enqueue_task_hvf,
-	.pick_task = pick_task_hvf,
-	.dequeue_task = dequeue_task_hvf,
-	.set_next_task = set_next_task_hvf,
-	.pick_next_task = pick_next_task_hvf,
-	.switched_to = switched_to_hvf,
-	.switched_from = switched_from_hvf,
-	.task_tick = task_tick_hvf,
-	.task_dead = task_dead_hvf,
-	.put_prev_task = put_prev_task_hvf
+DEFINE_SCHED_CLASS(hvf) = {
+	.enqueue_task		= enqueue_task_hvf,
+	.dequeue_task		= dequeue_task_hvf,
+	.pick_task		= pick_task_hvf,
+	.set_next_task		= set_next_task_hvf,
+	.pick_next_task		= pick_next_task_hvf,
+	.switched_to		= switched_to_hvf,
+	.switched_from		= switched_from_hvf,
+	.task_tick		= task_tick_hvf,
+	.task_dead		= task_dead_hvf,
+	.put_prev_task		= put_prev_task_hvf
 };
 
 
@@ -219,6 +223,8 @@ DEFINE_SCHED_CLASS(hvf)={
 inline void init_hvf_rq(struct hvf_rq *hvf_rq){
 	hvf_rq->hvf_task_queue = RB_ROOT;
 	hvf_rq->max_value_entity = NULL;
+	hvf_rq->curr = NULL;
+	hvf_rq->nr_hvf_queued = 0;
 }
 
 inline long compute_init_sched_value(struct task_struct *p){
@@ -250,12 +256,12 @@ inline long reduce_sched_value(struct sched_hvf_entity *se){
 bool hvf_rq_rbtree_insert(struct rb_root *root, struct sched_hvf_entity *se){
 	struct rb_node **new_node = &(root->rb_node), *parent = NULL;
 
-	while(*new_node!=NULL){
+	while (*new_node != NULL){
 		struct sched_hvf_entity *this_entity = container_of(*new_node, struct sched_hvf_entity, run_node);
 		int result = se->curr_sched_value - this_entity->curr_sched_value;
 
 		parent = *new_node;
-		if(result<=0)
+		if (result<=0)
 			new_node = &((*new_node)->rb_left);
 		else
 			new_node = &((*new_node)->rb_right);
@@ -315,9 +321,9 @@ long time_slice(long sched_value){
 	const int max_slice = K;
 	const int min_slice = 10;
 
-	if(sched_value < 1)
+	if (sched_value < 1)
 		sched_value = 1;
-	if(sched_value > K)
+	if (sched_value > K)
 		sched_value = K;
 	long scaled_value = sched_value;
 	long range = max_slice - min_slice;
