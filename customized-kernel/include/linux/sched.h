@@ -727,16 +727,17 @@ struct sched_dl_entity {
 
 
 struct sched_hvf_entity {
-	struct rb_node run_node;
-	long init_sched_value;
-	long curr_sched_value;
-	long first_time;
-	long latest_time;
-	long time_used;
-	long runtime;
-	bool on_rq;
-	int cpu_answers;
-	long cpu_first_answer;
+	struct rb_node		run_node;
+	long			init_sched_value;
+	long			curr_sched_value;
+	long			first_time;
+	long			latest_time;
+	long			time_used;
+	long			runtime;
+	bool			on_rq;
+	int			cpu_answers;
+	long			cpu_first_answer;
+	bool			slice_expired;
 };
 
 #ifdef CONFIG_UCLAMP_TASK

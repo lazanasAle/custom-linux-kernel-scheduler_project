@@ -85,7 +85,7 @@ enqueue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
 	}
 	else {
 		if (flags & (ENQUEUE_WAKEUP | ENQUEUE_MIGRATED | ENQUEUE_RESTORE))
-			reduce_sched_value(se_hvf);
+			compute_init_sched_value(p);
 		if (exceeded_time(p) && (se_hvf != hvf_rq->curr) && pid_alive(p)){
 			send_sig(SIGKILL, p, 0);
 			return;
@@ -167,9 +167,10 @@ static void task_tick_hvf(struct rq *rq, struct task_struct *curr, int queued){
 
 	curr_ent->runtime += TICK_NSEC;
 
-	if (curr_ent->runtime >= slice*K*K)
+	if (curr_ent->runtime >= slice*K*K){
+		curr_ent->slice_expired = true;
 		resched_curr(rq);
-
+	}
 }
 
 static void task_dead_hvf(struct task_struct *p){
@@ -199,8 +200,13 @@ static void put_prev_task_hvf(struct rq *rq, struct task_struct *prev, struct ta
 	struct sched_hvf_entity *se_hvf = &prev->hvf;
 	struct hvf_rq *hvf_rq = &rq->hvf;
 
-	if (task_is_running(prev))
+	if (task_is_running(prev)) {
+		if (se_hvf->slice_expired){
+			reduce_sched_value(se_hvf);
+			se_hvf->slice_expired = false;
+		}
 		put_prev_hvf_entity(hvf_rq, se_hvf);
+	}
 }
 
 
@@ -242,7 +248,7 @@ inline long compute_init_sched_value(struct task_struct *p){
 
 
 inline long reduce_sched_value(struct sched_hvf_entity *se){
-	long rate = se->init_sched_value;
+	long rate = se->time_used;
 	long old_value = se->curr_sched_value;
 	long new_value = old_value - (rate*old_value/100);
 	new_value = (new_value>0)? new_value : (old_value == 0)? 10: 0;
@@ -280,6 +286,7 @@ inline void init_sched_hvf_entity(struct sched_hvf_entity *se){
 	se->latest_time = se->first_time;
 	se->time_used = 0;
 	se->cpu_answers = 0;
+	se->slice_expired = false;
 }
 
 inline bool exceeded_time(struct task_struct *p){
