@@ -173,10 +173,36 @@ static void task_tick_hvf(struct rq *rq, struct task_struct *curr, int queued){
 	}
 }
 
+
+static void register_entity_info(struct sched_hvf_entity *se_hvf, int pid){
+	long init_value = se_hvf->init_sched_value;
+	struct timespec64 now;
+	ktime_get_real_ts64(&now);
+	long curr_time = now.tv_sec*K + now.tv_nsec/(K*K);
+
+	long turnaround_time = curr_time - se_hvf->first_time;
+	long wait_time = turnaround_time - se_hvf->time_used;
+	long comp_time = se_hvf->time_used;
+	long response_time = se_hvf->cpu_first_answer - se_hvf->first_time;
+
+
+	trace_printk(
+					"hvf_task_terminated,%d,%ld,%ld,%ld,%ld,%ld\n",
+					pid,
+					init_value,
+					turnaround_time,
+					wait_time,
+					comp_time,
+					response_time
+				);
+}
+
 static void task_dead_hvf(struct task_struct *p){
 	struct rq *rq;
 	struct rq_flags rf;
 	struct sched_hvf_entity *se_hvf = &p->hvf;
+
+	register_entity_info(se_hvf, p->pid);
 
 	rq = task_rq_lock(p, &rf);
 
@@ -214,13 +240,13 @@ static void put_prev_task_hvf(struct rq *rq, struct task_struct *prev, struct ta
 DEFINE_SCHED_CLASS(hvf) = {
 	.enqueue_task		= enqueue_task_hvf,
 	.dequeue_task		= dequeue_task_hvf,
-	.pick_task		= pick_task_hvf,
+	.pick_task			= pick_task_hvf,
 	.set_next_task		= set_next_task_hvf,
 	.pick_next_task		= pick_next_task_hvf,
 	.switched_to		= switched_to_hvf,
 	.switched_from		= switched_from_hvf,
-	.task_tick		= task_tick_hvf,
-	.task_dead		= task_dead_hvf,
+	.task_tick			= task_tick_hvf,
+	.task_dead			= task_dead_hvf,
 	.put_prev_task		= put_prev_task_hvf
 };
 
