@@ -5,6 +5,7 @@
 #include <sched.h>
 #include <time.h>
 #include <sys/syscall.h>
+#include <sys/wait.h>
 
 #define DELAY 750
 #define K 1000
@@ -69,6 +70,10 @@ int main(){
             }
             exit(0);
         }
+    }
+
+    for (int j=0; j<20; ++j){
+        waitpid(procs[j], NULL, 0);
     }
 
     return 0;
