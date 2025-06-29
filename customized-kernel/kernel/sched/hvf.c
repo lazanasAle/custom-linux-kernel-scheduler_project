@@ -21,7 +21,7 @@ void update_latest_se_hvf(struct sched_hvf_entity *se);
 void update_used_se_hvf(struct sched_hvf_entity *se);
 bool hvf_rq_empty(struct hvf_rq *hvf_rq);
 long time_slice(long sched_value);
-
+long penalty_hvf_entity(struct sched_hvf_entity *se, long ctime);
 
 
 const struct sched_class hvf_sched_class;
@@ -60,6 +60,13 @@ static struct task_struct *pick_next_task_hvf(struct rq *rq, struct task_struct 
 }
 
 static void enqueue_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se){
+    struct task_struct *task_to_eq = task_hvf_of(se);
+
+    if (exceeded_time(task_to_eq)){
+        long ctime = task_to_eq->computation_time;
+        penalty_hvf_entity(se, ctime);
+    }
+
 	hvf_rq_rbtree_insert(&hvf_rq->hvf_task_queue, se);
 	hvf_rq->nr_hvf_queued++;
 	se->on_rq = true;
@@ -83,16 +90,11 @@ enqueue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
 		init_sched_hvf_entity(se_hvf);
 		compute_init_sched_value(p);
 	}
-	else {
-		if (flags & (ENQUEUE_WAKEUP | ENQUEUE_MIGRATED | ENQUEUE_RESTORE))
-			compute_init_sched_value(p);
-		if (exceeded_time(p) && (se_hvf != hvf_rq->curr) && pid_alive(p)){
-			send_sig(SIGKILL, p, 0);
-			return;
-		}
-	}
+    else if (flags & (ENQUEUE_WAKEUP | ENQUEUE_MIGRATED | ENQUEUE_RESTORE)){
+        compute_init_sched_value(p);
+    }
 
-	if (se_hvf != hvf_rq->curr && !se_hvf->on_rq){
+    if (se_hvf != hvf_rq->curr && !se_hvf->on_rq){
 		enqueue_hvf_entity(hvf_rq, se_hvf);
 		rq->nr_running++;
 	}
@@ -364,5 +366,15 @@ long time_slice(long sched_value){
 	return (((scaled_value*range)/K)+min_slice);
 }
 
+
+inline long penalty_hvf_entity(struct sched_hvf_entity *se, long ctime){
+    long diff = se->time_used - ctime;
+    long old_value = se->curr_sched_value;
+    long new_value = old_value - (diff*diff*old_value)/100;
+    new_value = (new_value>0)? new_value : (old_value == 0)? 10: 0;
+
+    se->curr_sched_value = new_value;
+    return new_value;
+}
 
 
