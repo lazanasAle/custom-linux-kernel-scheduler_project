@@ -155,12 +155,12 @@ static void set_next_task_hvf(struct rq *rq, struct task_struct *p, bool first){
 
 static void
 switched_to_hvf(struct rq *rq, struct task_struct *p){
-	// TODO
+    // NO OPERATION
 }
 
 static void
 switched_from_hvf(struct rq *rq, struct task_struct *p){
-	// TODO
+    // NO OPERATION
 }
 
 static void task_tick_hvf(struct rq *rq, struct task_struct *curr, int queued){
@@ -237,6 +237,10 @@ static void put_prev_task_hvf(struct rq *rq, struct task_struct *prev, struct ta
 	}
 }
 
+static void wakeup_preempt_hvf(struct rq *rq, struct task_struct *p, int flags){
+    //NO OPERATION
+}
+
 
 
 DEFINE_SCHED_CLASS(hvf) = {
@@ -249,7 +253,8 @@ DEFINE_SCHED_CLASS(hvf) = {
 	.switched_from		= switched_from_hvf,
 	.task_tick			= task_tick_hvf,
 	.task_dead			= task_dead_hvf,
-	.put_prev_task		= put_prev_task_hvf
+    .put_prev_task		= put_prev_task_hvf,
+    .wakeup_preempt     = wakeup_preempt_hvf
 };
 
 
