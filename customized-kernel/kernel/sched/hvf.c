@@ -112,7 +112,7 @@ static bool dequeue_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *s
 	rb_erase(&se->run_node, &hvf_rq->hvf_task_queue);
 	RB_CLEAR_NODE(&se->run_node);
 	hvf_rq->nr_hvf_queued--;
-	se->on_rq=false;
+    se->on_rq = false;
 
 	return true;
 }
@@ -128,6 +128,17 @@ dequeue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
 		rq->nr_running--;
 		return result;
 	}
+    if (se_hvf == hvf_rq->curr && READ_ONCE(p->__state) != TASK_RUNNING){
+        bool result;
+        if (unlikely(se_hvf->on_rq))
+            result = dequeue_hvf_entity(hvf_rq, se_hvf);
+        else
+            result = true;
+        rq->nr_running--;
+        hvf_rq->curr = NULL;
+
+        return result;
+    }
 
 	return false;
 }
