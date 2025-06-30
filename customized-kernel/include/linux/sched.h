@@ -1644,6 +1644,7 @@ struct task_struct {
 	long				 deadline_1;
 	long				 deadline_2;
 	long				 computation_time;
+    bool                 pars_set;
 
 	/*
 	 * New fields for task_struct should be added above here, so that

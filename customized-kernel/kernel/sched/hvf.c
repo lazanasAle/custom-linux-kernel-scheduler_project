@@ -3,7 +3,7 @@
 #include <linux/cpumask.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
-#include <linux/sched/signal.h>
+#include <asm/current.h>
 #include <linux/timekeeping.h>
 #include <asm-generic/errno.h>
 #include "sched.h"
@@ -155,12 +155,28 @@ static void set_next_task_hvf(struct rq *rq, struct task_struct *p, bool first){
 
 static void
 switched_to_hvf(struct rq *rq, struct task_struct *p){
-    // NO OPERATION
+    if (!p->pars_set){
+        struct timespec64 now;
+        ktime_get_real_ts64(&now);
+        long curr_time = now.tv_sec + now.tv_nsec/(K*K*K);
+
+        p->deadline_1 = curr_time + 4;
+        p->deadline_2 = curr_time + 6;
+        p->computation_time = K;
+        p->pars_set = true;
+
+        compute_init_sched_value(p);
+    }
 }
 
 static void
 switched_from_hvf(struct rq *rq, struct task_struct *p){
-    // NO OPERATION
+    if (p->pars_set){
+        p->deadline_1 = 0;
+        p->deadline_2 = 0;
+        p->computation_time = 0;
+        p->pars_set = false;
+    }
 }
 
 static void task_tick_hvf(struct rq *rq, struct task_struct *curr, int queued){
@@ -238,7 +254,13 @@ static void put_prev_task_hvf(struct rq *rq, struct task_struct *prev, struct ta
 }
 
 static void wakeup_preempt_hvf(struct rq *rq, struct task_struct *p, int flags){
-    //NO OPERATION
+    if (current->sched_class == &hvf_sched_class){
+        struct sched_hvf_entity *curr_se_hvf = &current->hvf;
+        struct sched_hvf_entity *p_hvf = &p->hvf;
+        if (exceeded_time(current) && (p_hvf->curr_sched_value > curr_se_hvf->curr_sched_value)){
+            resched_curr(rq);
+        }
+    }
 }
 
 
