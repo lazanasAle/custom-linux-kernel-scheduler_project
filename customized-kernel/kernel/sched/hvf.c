@@ -1,3 +1,11 @@
+/*
+ *  kernel/sched/hvf.c
+ *
+ *  Highest Value First Algorithm Code
+ *
+ *  Copyright (C) 2025 Alexios Lazanas
+ */
+
 #include <linux/sched.h>
 #include <linux/rbtree.h>
 #include <linux/cpumask.h>
