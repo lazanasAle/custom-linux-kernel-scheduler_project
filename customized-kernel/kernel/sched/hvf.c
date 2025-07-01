@@ -128,12 +128,12 @@ dequeue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
 		rq->nr_running--;
 		return result;
 	}
-    if (se_hvf == hvf_rq->curr && READ_ONCE(p->__state) != TASK_RUNNING){
-        bool result;
+    if (se_hvf == hvf_rq->curr && !task_is_running(p)){
+        bool result = true;
+
         if (unlikely(se_hvf->on_rq))
             result = dequeue_hvf_entity(hvf_rq, se_hvf);
-        else
-            result = true;
+
         rq->nr_running--;
         hvf_rq->curr = NULL;
 
@@ -166,6 +166,11 @@ static void set_next_task_hvf(struct rq *rq, struct task_struct *p, bool first){
 
 static void
 switched_to_hvf(struct rq *rq, struct task_struct *p){
+    /*
+     * Give a default value to a process that chose to be scheduled with the scheduler
+     * but has not defined its values
+     */
+
     if (!p->pars_set){
         struct timespec64 now;
         ktime_get_real_ts64(&now);
@@ -182,6 +187,11 @@ switched_to_hvf(struct rq *rq, struct task_struct *p){
 
 static void
 switched_from_hvf(struct rq *rq, struct task_struct *p){
+    /*
+     * Clear scheduling values, since the task changed sched_class
+     * it does not need them anymore
+     */
+
     if (p->pars_set){
         p->deadline_1 = 0;
         p->deadline_2 = 0;
@@ -268,12 +278,17 @@ static void wakeup_preempt_hvf(struct rq *rq, struct task_struct *p, int flags){
     if (current->sched_class == &hvf_sched_class){
         struct sched_hvf_entity *curr_se_hvf = &current->hvf;
         struct sched_hvf_entity *p_hvf = &p->hvf;
+
+        /*
+         * preempt only if the current task has exceeded its time,
+         * else preemption happens generally in time_slice expiration on task_tick_hvf
+         */
+
         if (exceeded_time(current) && (p_hvf->curr_sched_value > curr_se_hvf->curr_sched_value)){
             resched_curr(rq);
         }
     }
 }
-
 
 
 DEFINE_SCHED_CLASS(hvf) = {
