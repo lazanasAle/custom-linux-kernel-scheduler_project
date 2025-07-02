@@ -1,6 +1,6 @@
 # Linux Scheduling Class Implementation - Kernel 6.14.8
 
-This repository contains the implementation of my kernel scheduling class algorithm  designed to be integrated with the **Linux 6.14.8 kernel** source tree.
+This repository contains the implementation of my kernel scheduling algorithm  designed to be integrated with the **Linux 6.14.8 kernel** source tree.
 
 ## ⚙️ Requirements
 
