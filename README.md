@@ -5,7 +5,7 @@ This repository contains the implementation of my kernel scheduling algorithm  d
 ## ⚙️ Requirements
 
 - Linux kernel source tarball version **6.14.8**
-- A working Linux environment with `gcc 14.1.0`, `make`, and required development tools
+- A working Linux environment with `gcc 14.1.0`, (newer versions like `gcc 15` and on may not work bcause linux 6.14.8 was designed for `gcc 14`) `make`, and required development tools
 - Familiarity with kernel compilation and configuration
 
 ## 📦 Installation Instructions
