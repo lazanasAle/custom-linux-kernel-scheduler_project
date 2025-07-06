@@ -17,7 +17,6 @@ This repository contains the implementation of my kernel scheduling algorithm  d
    ```bash
    wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.14.8.tar.xz
    tar -xf linux-6.14.8.tar.xz
-   cd linux-6.14.8
    ```
    
 2. **Integrate new Kernel Code**
