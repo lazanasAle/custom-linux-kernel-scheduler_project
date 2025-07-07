@@ -32,6 +32,7 @@ cp -r custom-linux-kernel-scheduler_project/customized-kernel/* linux-6.14.8/
 Run the following commands to configure and build the kernel with the new scheduler:
 
 ```bash
+cd linux-6.14.8
 make menuconfig
 make -j$(nproc) bzImage
 ```
