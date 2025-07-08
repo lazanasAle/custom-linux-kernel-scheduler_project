@@ -300,17 +300,17 @@ static void wakeup_preempt_hvf(struct rq *rq, struct task_struct *p, int flags){
 
 
 DEFINE_SCHED_CLASS(hvf) = {
-	.enqueue_task		= enqueue_task_hvf,
+        .enqueue_task		= enqueue_task_hvf,
 	.dequeue_task		= dequeue_task_hvf,
-	.pick_task			= pick_task_hvf,
+	.pick_task		= pick_task_hvf,
 	.set_next_task		= set_next_task_hvf,
 	.pick_next_task		= pick_next_task_hvf,
 	.switched_to		= switched_to_hvf,
 	.switched_from		= switched_from_hvf,
-	.task_tick			= task_tick_hvf,
-	.task_dead			= task_dead_hvf,
-    .put_prev_task		= put_prev_task_hvf,
-    .wakeup_preempt     = wakeup_preempt_hvf
+	.task_tick		= task_tick_hvf,
+	.task_dead		= task_dead_hvf,
+	.put_prev_task		= put_prev_task_hvf,
+	.wakeup_preempt		= wakeup_preempt_hvf
 };
 
 
@@ -323,13 +323,11 @@ inline void init_hvf_rq(struct hvf_rq *hvf_rq){
 }
 
 inline long compute_init_sched_value(struct task_struct *p){
-	const long first_time = p->hvf.first_time;
-	const long D1 = p->deadline_1*K;
-	const long D2 = p->deadline_2*K;
-	const long X = first_time+p->computation_time;
-	const long V = (X<D1)? H : (D2<X)? 0 : (D2-X)*H/(D2-D1);
+        const struct sched_hvf_entity *se_hvf = &p->hvf;
+	const long X = se_hvf->first_time+p->computation_time;
+	const long V = (X < p->deadline_1*K)? H : (p->deadline_2*K < X)? 0 : (p->deadline_2*K - X)*H/((p->deadline_2 - p->deadline_1)*K);
 
-	p->hvf.init_sched_value = V;
+        p->hvf.init_sched_value = V;
 	p->hvf.curr_sched_value = V;
 
 	return V;
