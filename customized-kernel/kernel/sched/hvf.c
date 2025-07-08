@@ -234,14 +234,14 @@ static void register_entity_info(struct sched_hvf_entity *se_hvf, int pid){
 
 
 	trace_printk(
-					"hvf_task_terminated,%d,%ld,%ld,%ld,%ld,%ld\n",
-					pid,
-					init_value,
-					turnaround_time,
-					wait_time,
-					comp_time,
-					response_time
-				);
+	                "hvf_task_terminated,%d,%ld,%ld,%ld,%ld,%ld\n",
+			pid,
+			init_value,
+			turnaround_time,
+			wait_time,
+			comp_time,
+			response_time
+	);
 }
 
 static void task_dead_hvf(struct task_struct *p){
