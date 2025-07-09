@@ -68,12 +68,12 @@ static struct task_struct *pick_next_task_hvf(struct rq *rq, struct task_struct 
 }
 
 static void enqueue_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se){
-    struct task_struct *task_to_eq = task_hvf_of(se);
+        struct task_struct *task_to_eq = task_hvf_of(se);
 
-    if (exceeded_time(task_to_eq)){
-        long ctime = task_to_eq->computation_time;
-        penalty_hvf_entity(se, ctime);
-    }
+        if (exceeded_time(task_to_eq)){
+	        long ctime = task_to_eq->computation_time;
+		penalty_hvf_entity(se, ctime);
+	}
 
 	hvf_rq_rbtree_insert(&hvf_rq->hvf_task_queue, se);
 	hvf_rq->nr_hvf_queued++;
@@ -86,7 +86,7 @@ static void enqueue_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *s
 	}
 
 	if (max_entity->curr_sched_value < se->curr_sched_value)
-		hvf_rq->max_value_entity = rb_entry(rb_last(&hvf_rq->hvf_task_queue), struct sched_hvf_entity, run_node);
+	        hvf_rq->max_value_entity = rb_entry(rb_next(&max_entity->run_node), struct sched_hvf_entity, run_node);
 }
 
 static void
@@ -98,11 +98,11 @@ enqueue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
 		init_sched_hvf_entity(se_hvf);
 		compute_init_sched_value(p);
 	}
-    else if (flags & (ENQUEUE_WAKEUP | ENQUEUE_MIGRATED | ENQUEUE_RESTORE)){
-        compute_init_sched_value(p);
-    }
+	else if (flags & (ENQUEUE_WAKEUP | ENQUEUE_MIGRATED | ENQUEUE_RESTORE)){
+	        compute_init_sched_value(p);
+	}
 
-    if (se_hvf != hvf_rq->curr && !se_hvf->on_rq){
+        if (se_hvf != hvf_rq->curr && !se_hvf->on_rq){
 		enqueue_hvf_entity(hvf_rq, se_hvf);
 		rq->nr_running++;
 	}
@@ -120,7 +120,7 @@ static bool dequeue_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *s
 	rb_erase(&se->run_node, &hvf_rq->hvf_task_queue);
 	RB_CLEAR_NODE(&se->run_node);
 	hvf_rq->nr_hvf_queued--;
-    se->on_rq = false;
+	se->on_rq = false;
 
 	return true;
 }
@@ -179,18 +179,18 @@ switched_to_hvf(struct rq *rq, struct task_struct *p){
      * but has not defined its values
      */
 
-    if (!p->pars_set){
-        struct timespec64 now;
-        ktime_get_real_ts64(&now);
-        long curr_time = now.tv_sec + now.tv_nsec/(K*K*K);
+        if (!p->pars_set){
+	        struct timespec64 now;
+		ktime_get_real_ts64(&now);
+		long curr_time = now.tv_sec + now.tv_nsec/(K*K*K);
 
-        p->deadline_1 = curr_time + 4;
-        p->deadline_2 = curr_time + 6;
-        p->computation_time = K;
-        p->pars_set = true;
+                p->deadline_1 = curr_time + 4;
+		p->deadline_2 = curr_time + 6;
+		p->computation_time = K;
+		p->pars_set = true;
 
-        compute_init_sched_value(p);
-    }
+                compute_init_sched_value(p);
+	}
 }
 
 static void
@@ -200,12 +200,12 @@ switched_from_hvf(struct rq *rq, struct task_struct *p){
      * it does not need them anymore
      */
 
-    if (p->pars_set){
-        p->deadline_1 = 0;
-        p->deadline_2 = 0;
-        p->computation_time = 0;
-        p->pars_set = false;
-    }
+        if (p->pars_set){
+	        p->deadline_1 = 0;
+		p->deadline_2 = 0;
+		p->computation_time = 0;
+		p->pars_set = false;
+	}
 }
 
 static void task_tick_hvf(struct rq *rq, struct task_struct *curr, int queued){
@@ -283,19 +283,19 @@ static void put_prev_task_hvf(struct rq *rq, struct task_struct *prev, struct ta
 }
 
 static void wakeup_preempt_hvf(struct rq *rq, struct task_struct *p, int flags){
-    if (current->sched_class == &hvf_sched_class){
-        struct sched_hvf_entity *curr_se_hvf = &current->hvf;
-        struct sched_hvf_entity *p_hvf = &p->hvf;
+        if (current->sched_class == &hvf_sched_class){
+	        struct sched_hvf_entity *curr_se_hvf = &current->hvf;
+		struct sched_hvf_entity *p_hvf = &p->hvf;
 
-        /*
-         * preempt only if the current task has exceeded its time,
-         * else preemption happens generally in time_slice expiration on task_tick_hvf
-         */
+                /*
+		 * preempt only if the current task has exceeded its time,
+		* else preemption happens generally in time_slice expiration on task_tick_hvf
+		*/
 
-        if (exceeded_time(current) && (p_hvf->curr_sched_value > curr_se_hvf->curr_sched_value)){
-            resched_curr(rq);
-        }
-    }
+                if (exceeded_time(current) && (p_hvf->curr_sched_value > curr_se_hvf->curr_sched_value)){
+		        resched_curr(rq);
+		}
+	}
 }
 
 

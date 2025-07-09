@@ -61,7 +61,7 @@ int main(){
         }
         else if (procs[j] == 0){
             struct sched_param param = {.sched_priority=0};
-            if (!set_sched_params(now+j+j, now+j+4*j, (j+2*j)*K)){
+            if (!set_sched_params(now+j+1, now+2*j+5, (j+3)*K)){
                 sched_setscheduler(0, SCHED_HVF, &param);
                 do_work(j+1);
             }
