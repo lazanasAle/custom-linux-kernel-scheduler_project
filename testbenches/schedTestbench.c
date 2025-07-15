@@ -9,6 +9,7 @@
 
 #define DELAY 750
 #define K 1000
+#define H13 1300
 
 #define SCHED_HVF 8
 
@@ -61,7 +62,7 @@ int main(){
         }
         else if (procs[j] == 0){
             struct sched_param param = {.sched_priority=0};
-            if (!set_sched_params(now+j+1, now+j+7, (j+4)*K)){
+            if (!set_sched_params(now+j+1, now+j+7, K+H13*j)){
                 sched_setscheduler(0, SCHED_HVF, &param);
                 do_work(j+1);
             }
