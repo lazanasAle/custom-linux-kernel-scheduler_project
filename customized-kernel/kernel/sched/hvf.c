@@ -35,11 +35,11 @@ long penalty_hvf_entity(struct sched_hvf_entity *se, long ctime);
 const struct sched_class hvf_sched_class;
 
 static inline
-struct sched_hvf_entity *pick_entity_hvf(struct hvf_rq *hvf_rq){
+struct sched_hvf_entity *pick_entity_hvf(struct hvf_rq *hvf_rq) {
 	return hvf_rq->max_value_entity;
 }
 
-static struct task_struct *pick_task_hvf(struct rq *rq){
+static struct task_struct *pick_task_hvf(struct rq *rq) {
 	struct sched_hvf_entity *se_hvf;
 	struct hvf_rq *hvf_rq;
 
@@ -51,8 +51,8 @@ static struct task_struct *pick_task_hvf(struct rq *rq){
 }
 
 
-static struct task_struct *pick_next_task_hvf(struct rq *rq, struct task_struct *prev){
-	if (prev->sched_class == &hvf_sched_class){
+static struct task_struct *pick_next_task_hvf(struct rq *rq, struct task_struct *prev) {
+        if (prev->sched_class == &hvf_sched_class) {
 		struct sched_hvf_entity *prev_hvf = &prev->hvf;
 		update_used_se_hvf(prev_hvf);
 	}
@@ -67,10 +67,10 @@ static struct task_struct *pick_next_task_hvf(struct rq *rq, struct task_struct 
 	return next;
 }
 
-static void enqueue_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se){
+static void enqueue_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se) {
         struct task_struct *task_to_eq = task_hvf_of(se);
 
-        if (exceeded_time(task_to_eq)){
+        if (exceeded_time(task_to_eq)) {
 	        long ctime = task_to_eq->computation_time;
 		penalty_hvf_entity(se, ctime);
 	}
@@ -80,7 +80,7 @@ static void enqueue_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *s
 	se->on_rq = true;
 	struct sched_hvf_entity *max_entity = hvf_rq->max_value_entity;
 
-	if (!max_entity){
+        if (!max_entity) {
 		hvf_rq->max_value_entity = rb_entry(rb_last(&hvf_rq->hvf_task_queue), struct sched_hvf_entity, run_node);
 		return;
 	}
@@ -90,29 +90,29 @@ static void enqueue_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *s
 }
 
 static void
-enqueue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
+enqueue_task_hvf(struct rq *rq, struct task_struct *p, int flags) {
 	struct hvf_rq *hvf_rq = &rq->hvf;
 	struct sched_hvf_entity *se_hvf = &p->hvf;
 
-	if (flags & (ENQUEUE_INITIAL | ENQUEUE_CHANGED)){
+        if (flags & (ENQUEUE_INITIAL | ENQUEUE_CHANGED)) {
 		init_sched_hvf_entity(se_hvf);
 		compute_init_sched_value(p);
 	}
-	else if (flags & (ENQUEUE_WAKEUP | ENQUEUE_MIGRATED | ENQUEUE_RESTORE)){
+	else if (flags & (ENQUEUE_WAKEUP | ENQUEUE_MIGRATED | ENQUEUE_RESTORE)) {
 	        compute_init_sched_value(p);
 	}
 
-        if (se_hvf != hvf_rq->curr && !se_hvf->on_rq){
+        if (se_hvf != hvf_rq->curr && !se_hvf->on_rq) {
 		enqueue_hvf_entity(hvf_rq, se_hvf);
 		rq->nr_running++;
 	}
 }
 
 
-static bool dequeue_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se){
+static bool dequeue_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se) {
 	struct rb_node *max_node = &hvf_rq->max_value_entity->run_node;
 
-	if (max_node == &se->run_node){
+        if (max_node == &se->run_node) {
 		struct rb_node *prev_node = rb_prev(&se->run_node);
 		hvf_rq->max_value_entity = (prev_node!=NULL)? rb_entry(prev_node, struct sched_hvf_entity, run_node) : NULL;
 	}
@@ -127,16 +127,16 @@ static bool dequeue_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *s
 
 
 static bool
-dequeue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
+dequeue_task_hvf(struct rq *rq, struct task_struct *p, int flags) {
 	struct hvf_rq *hvf_rq = &rq->hvf;
 	struct sched_hvf_entity *se_hvf = &p->hvf;
 
-	if (se_hvf != hvf_rq->curr && se_hvf->on_rq){
+        if (se_hvf != hvf_rq->curr && se_hvf->on_rq) {
 		bool result = dequeue_hvf_entity(hvf_rq, se_hvf);
 		rq->nr_running--;
 		return result;
 	}
-    if (se_hvf == hvf_rq->curr && !task_is_running(p)){
+    if (se_hvf == hvf_rq->curr && !task_is_running(p)) {
         bool result = true;
 
         if (unlikely(se_hvf->on_rq))
@@ -152,7 +152,7 @@ dequeue_task_hvf(struct rq *rq, struct task_struct *p, int flags){
 }
 
 static void
-set_next_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se){
+set_next_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se) {
 	if (se->on_rq)
 		dequeue_hvf_entity(hvf_rq, se);
 
@@ -162,7 +162,7 @@ set_next_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se){
 }
 
 
-static void set_next_task_hvf(struct rq *rq, struct task_struct *p, bool first){
+static void set_next_task_hvf(struct rq *rq, struct task_struct *p, bool first) {
 	struct sched_hvf_entity *se_hvf = &p->hvf;
 	struct hvf_rq *hvf_rq = &rq->hvf;
 	if (!first)
@@ -173,13 +173,13 @@ static void set_next_task_hvf(struct rq *rq, struct task_struct *p, bool first){
 
 
 static void
-switched_to_hvf(struct rq *rq, struct task_struct *p){
+switched_to_hvf(struct rq *rq, struct task_struct *p) {
     /*
      * Give a default value to a process that chose to be scheduled with the scheduler
      * but has not defined its values
      */
 
-        if (!p->pars_set){
+        if (!p->pars_set) {
 	        struct timespec64 now;
 		ktime_get_real_ts64(&now);
 		long curr_time = now.tv_sec + now.tv_nsec/(K*K*K);
@@ -194,13 +194,13 @@ switched_to_hvf(struct rq *rq, struct task_struct *p){
 }
 
 static void
-switched_from_hvf(struct rq *rq, struct task_struct *p){
+switched_from_hvf(struct rq *rq, struct task_struct *p) {
     /*
      * Clear scheduling values, since the task changed sched_class
      * it does not need them anymore
      */
 
-        if (p->pars_set){
+        if (p->pars_set) {
 	        p->deadline_1 = 0;
 		p->deadline_2 = 0;
 		p->computation_time = 0;
@@ -208,20 +208,20 @@ switched_from_hvf(struct rq *rq, struct task_struct *p){
 	}
 }
 
-static void task_tick_hvf(struct rq *rq, struct task_struct *curr, int queued){
+static void task_tick_hvf(struct rq *rq, struct task_struct *curr, int queued) {
 	struct sched_hvf_entity *curr_ent = &curr->hvf;
 	long slice = time_slice(curr_ent->curr_sched_value);
 
 	curr_ent->runtime += TICK_NSEC;
 
-	if (curr_ent->runtime >= slice*K*K){
+        if (curr_ent->runtime >= slice*K*K) {
 		curr_ent->slice_expired = true;
 		resched_curr(rq);
 	}
 }
 
 
-static void register_entity_info(struct sched_hvf_entity *se_hvf, int pid){
+static void register_entity_info(struct sched_hvf_entity *se_hvf, int pid) {
 	long init_value = se_hvf->init_sched_value;
 	struct timespec64 now;
 	ktime_get_real_ts64(&now);
@@ -244,7 +244,7 @@ static void register_entity_info(struct sched_hvf_entity *se_hvf, int pid){
 	);
 }
 
-static void task_dead_hvf(struct task_struct *p){
+static void task_dead_hvf(struct task_struct *p) {
 	struct rq *rq;
 	struct rq_flags rf;
 	struct sched_hvf_entity *se_hvf = &p->hvf;
@@ -262,19 +262,19 @@ static void task_dead_hvf(struct task_struct *p){
 }
 
 static void
-put_prev_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se){
+put_prev_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se) {
 	if (!se->on_rq)
 		enqueue_hvf_entity(hvf_rq, se);
 
 	hvf_rq->curr = NULL;
 }
 
-static void put_prev_task_hvf(struct rq *rq, struct task_struct *prev, struct task_struct *next){
+static void put_prev_task_hvf(struct rq *rq, struct task_struct *prev, struct task_struct *next) {
 	struct sched_hvf_entity *se_hvf = &prev->hvf;
 	struct hvf_rq *hvf_rq = &rq->hvf;
 
 	if (task_is_running(prev)) {
-		if (se_hvf->slice_expired){
+	        if (se_hvf->slice_expired) {
 			reduce_sched_value(se_hvf);
 			se_hvf->slice_expired = false;
 		}
@@ -282,8 +282,8 @@ static void put_prev_task_hvf(struct rq *rq, struct task_struct *prev, struct ta
 	}
 }
 
-static void wakeup_preempt_hvf(struct rq *rq, struct task_struct *p, int flags){
-        if (current->sched_class == &hvf_sched_class){
+static void wakeup_preempt_hvf(struct rq *rq, struct task_struct *p, int flags) {
+        if (current->sched_class == &hvf_sched_class) {
 	        struct sched_hvf_entity *curr_se_hvf = &current->hvf;
 		struct sched_hvf_entity *p_hvf = &p->hvf;
 
@@ -292,7 +292,7 @@ static void wakeup_preempt_hvf(struct rq *rq, struct task_struct *p, int flags){
 		* else preemption happens generally in time_slice expiration on task_tick_hvf
 		*/
 
-                if (exceeded_time(current) && (p_hvf->curr_sched_value > curr_se_hvf->curr_sched_value)){
+                if (exceeded_time(current) && (p_hvf->curr_sched_value > curr_se_hvf->curr_sched_value)) {
 		        resched_curr(rq);
 		}
 	}
@@ -315,14 +315,14 @@ DEFINE_SCHED_CLASS(hvf) = {
 
 
 
-inline void init_hvf_rq(struct hvf_rq *hvf_rq){
+inline void init_hvf_rq(struct hvf_rq *hvf_rq) {
 	hvf_rq->hvf_task_queue = RB_ROOT;
 	hvf_rq->max_value_entity = NULL;
 	hvf_rq->curr = NULL;
 	hvf_rq->nr_hvf_queued = 0;
 }
 
-inline long compute_init_sched_value(struct task_struct *p){
+inline long compute_init_sched_value(struct task_struct *p) {
         const struct sched_hvf_entity *se_hvf = &p->hvf;
 	const long X = se_hvf->first_time+p->computation_time;
 	const long V = (X < p->deadline_1*K)? H : (p->deadline_2*K < X)? 0 : (p->deadline_2*K - X)*H/((p->deadline_2 - p->deadline_1)*K);
@@ -334,7 +334,7 @@ inline long compute_init_sched_value(struct task_struct *p){
 }
 
 
-inline long reduce_sched_value(struct sched_hvf_entity *se){
+inline long reduce_sched_value(struct sched_hvf_entity *se) {
 	long rate = se->time_used;
 	long old_value = se->curr_sched_value;
 	long new_value = old_value - (rate*old_value/100);
@@ -346,10 +346,10 @@ inline long reduce_sched_value(struct sched_hvf_entity *se){
 }
 
 
-bool hvf_rq_rbtree_insert(struct rb_root *root, struct sched_hvf_entity *se){
+bool hvf_rq_rbtree_insert(struct rb_root *root, struct sched_hvf_entity *se) {
 	struct rb_node **new_node = &(root->rb_node), *parent = NULL;
 
-	while (*new_node != NULL){
+        while (*new_node != NULL) {
 		struct sched_hvf_entity *this_entity = container_of(*new_node, struct sched_hvf_entity, run_node);
 		int result = se->curr_sched_value - this_entity->curr_sched_value;
 
@@ -366,7 +366,7 @@ bool hvf_rq_rbtree_insert(struct rb_root *root, struct sched_hvf_entity *se){
 	return true;
 }
 
-inline void init_sched_hvf_entity(struct sched_hvf_entity *se){
+inline void init_sched_hvf_entity(struct sched_hvf_entity *se) {
 	struct timespec64 now;
 	ktime_get_real_ts64(&now);
 	se->first_time = now.tv_sec*K + now.tv_nsec/(K*K);
@@ -376,7 +376,7 @@ inline void init_sched_hvf_entity(struct sched_hvf_entity *se){
 	se->slice_expired = false;
 }
 
-inline bool exceeded_time(struct task_struct *p){
+inline bool exceeded_time(struct task_struct *p) {
 	struct sched_hvf_entity *se_hvf = &p->hvf;
 	long used = se_hvf->time_used;
 	long ctime = p->computation_time;
@@ -385,7 +385,7 @@ inline bool exceeded_time(struct task_struct *p){
 }
 
 
-inline void update_latest_se_hvf(struct sched_hvf_entity *se){
+inline void update_latest_se_hvf(struct sched_hvf_entity *se) {
 	struct timespec64 now;
 	ktime_get_real_ts64(&now);
 	se->latest_time = now.tv_sec*K + now.tv_nsec/(K*K);
@@ -395,7 +395,7 @@ inline void update_latest_se_hvf(struct sched_hvf_entity *se){
 }
 
 
-inline bool hvf_rq_empty(struct hvf_rq *hvf_rq){
+inline bool hvf_rq_empty(struct hvf_rq *hvf_rq) {
 	struct rb_root *root = &hvf_rq->hvf_task_queue;
 	return RB_EMPTY_ROOT(root);
 }
@@ -403,7 +403,7 @@ inline bool hvf_rq_empty(struct hvf_rq *hvf_rq){
 
 /*this function shall be called in pick_next_task for the previous task*/
 
-inline void update_used_se_hvf(struct sched_hvf_entity *se){
+inline void update_used_se_hvf(struct sched_hvf_entity *se) {
 	struct timespec64 now;
 	ktime_get_real_ts64(&now);
 
@@ -411,7 +411,7 @@ inline void update_used_se_hvf(struct sched_hvf_entity *se){
 	se->time_used += current_time - se->latest_time;
 }
 
-long time_slice(long sched_value){
+long time_slice(long sched_value) {
 	const int max_slice = K;
 	const int min_slice = 10;
 
@@ -426,7 +426,7 @@ long time_slice(long sched_value){
 }
 
 
-inline long penalty_hvf_entity(struct sched_hvf_entity *se, long ctime){
+inline long penalty_hvf_entity(struct sched_hvf_entity *se, long ctime) {
     long diff = se->time_used - ctime;
     long old_value = se->curr_sched_value;
     long new_value = old_value - (diff*diff*old_value)/100;
