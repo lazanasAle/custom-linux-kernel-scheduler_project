@@ -44,7 +44,7 @@ you can use this `bzImage` in an emulator with qemu providing the equivalent ini
 
 ---
 
-The testbenches folder includes user-space C programs designed to test:
+The `testbenches` folder includes user-space C programs designed to test:
 
 The custom scheduler’s behavior
 
