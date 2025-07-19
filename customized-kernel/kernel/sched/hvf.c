@@ -136,17 +136,17 @@ dequeue_task_hvf(struct rq *rq, struct task_struct *p, int flags) {
 		rq->nr_running--;
 		return result;
 	}
-    if (se_hvf == hvf_rq->curr && !task_is_running(p)) {
-        bool result = true;
+	if (se_hvf == hvf_rq->curr && !task_is_running(p)) {
+	        bool result = true;
 
-        if (unlikely(se_hvf->on_rq))
-            result = dequeue_hvf_entity(hvf_rq, se_hvf);
+                if (unlikely(se_hvf->on_rq))
+		        result = dequeue_hvf_entity(hvf_rq, se_hvf);
 
-        rq->nr_running--;
-        hvf_rq->curr = NULL;
+                rq->nr_running--;
+		hvf_rq->curr = NULL;
 
-        return result;
-    }
+                return result;
+	}
 
 	return false;
 }
