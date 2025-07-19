@@ -52,7 +52,6 @@ void do_work(int workload){
 
 int main(){
     pid_t procs[20];
-    long now = time(NULL);
 
     for (int j=0; j<20; ++j){
         procs[j] = fork();
@@ -62,6 +61,7 @@ int main(){
         }
         else if (procs[j] == 0){
             struct sched_param param = {.sched_priority=0};
+            long now = time(NULL);
             if (!set_sched_params(now+j+1, now+j+7, K+H13*j)){
                 sched_setscheduler(0, SCHED_HVF, &param);
                 do_work(j+1);
