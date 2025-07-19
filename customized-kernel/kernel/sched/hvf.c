@@ -288,7 +288,7 @@ static void wakeup_preempt_hvf(struct rq *rq, struct task_struct *p, int flags) 
 		struct sched_hvf_entity *p_hvf = &p->hvf;
 
                 /*
-		 * preempt only if the current task has exceeded its time,
+		* preempt only if the current task has exceeded its time,
 		* else preemption happens generally in time_slice expiration on task_tick_hvf
 		*/
 
