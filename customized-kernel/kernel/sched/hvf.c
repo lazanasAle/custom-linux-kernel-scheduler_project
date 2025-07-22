@@ -50,23 +50,6 @@ static struct task_struct *pick_task_hvf(struct rq *rq) {
 	return task_hvf_of(se_hvf);
 }
 
-
-static struct task_struct *pick_next_task_hvf(struct rq *rq, struct task_struct *prev) {
-        if (prev->sched_class == &hvf_sched_class) {
-		struct sched_hvf_entity *prev_hvf = &prev->hvf;
-		update_used_se_hvf(prev_hvf);
-	}
-
-	struct task_struct *next = pick_task_hvf(rq);
-	if (!next)
-		return NULL;
-	else {
-		prev->sched_class->put_prev_task(rq, prev, next);
-		next->sched_class->set_next_task(rq, next, true);
-	}
-	return next;
-}
-
 static void enqueue_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se) {
         struct task_struct *task_to_eq = task_hvf_of(se);
 
@@ -270,15 +253,16 @@ put_prev_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se) {
 }
 
 static void put_prev_task_hvf(struct rq *rq, struct task_struct *prev, struct task_struct *next) {
-	struct sched_hvf_entity *se_hvf = &prev->hvf;
+	struct sched_hvf_entity *prev_hvf = &prev->hvf;
 	struct hvf_rq *hvf_rq = &rq->hvf;
-
+	update_used_se_hvf(prev_hvf);
+	
 	if (task_is_running(prev)) {
-	        if (se_hvf->slice_expired) {
-			reduce_sched_value(se_hvf);
-			se_hvf->slice_expired = false;
+	        if (prev_hvf->slice_expired) {
+			reduce_sched_value(prev_hvf);
+			prev_hvf->slice_expired = false;
 		}
-		put_prev_hvf_entity(hvf_rq, se_hvf);
+		put_prev_hvf_entity(hvf_rq, prev_hvf);
 	}
 }
 
@@ -287,7 +271,7 @@ static void wakeup_preempt_hvf(struct rq *rq, struct task_struct *p, int flags) 
 	        struct sched_hvf_entity *curr_se_hvf = &current->hvf;
 		struct sched_hvf_entity *p_hvf = &p->hvf;
 
-                /*
+    	   /*
 		* preempt only if the current task has exceeded its time,
 		* else preemption happens generally in time_slice expiration on task_tick_hvf
 		*/
@@ -300,15 +284,14 @@ static void wakeup_preempt_hvf(struct rq *rq, struct task_struct *p, int flags) 
 
 
 DEFINE_SCHED_CLASS(hvf) = {
-        .enqueue_task		= enqueue_task_hvf,
+    .enqueue_task		= enqueue_task_hvf,
 	.dequeue_task		= dequeue_task_hvf,
-	.pick_task		= pick_task_hvf,
+	.pick_task			= pick_task_hvf,
 	.set_next_task		= set_next_task_hvf,
-	.pick_next_task		= pick_next_task_hvf,
-	.switched_to		= switched_to_hvf,
+	.switched_to			= switched_to_hvf,
 	.switched_from		= switched_from_hvf,
-	.task_tick		= task_tick_hvf,
-	.task_dead		= task_dead_hvf,
+	.task_tick			= task_tick_hvf,
+	.task_dead			= task_dead_hvf,
 	.put_prev_task		= put_prev_task_hvf,
 	.wakeup_preempt		= wakeup_preempt_hvf
 };
