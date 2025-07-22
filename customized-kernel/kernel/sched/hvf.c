@@ -384,7 +384,10 @@ inline bool hvf_rq_empty(struct hvf_rq *hvf_rq) {
 }
 
 
-/*this function shall be called in pick_next_task for the previous task*/
+/*
+ * this function shall be called 
+ * in put_prev_task for the previous task to register the time it used the CPU
+ */
 
 inline void update_used_se_hvf(struct sched_hvf_entity *se) {
 	struct timespec64 now;
