@@ -156,7 +156,7 @@ static void set_next_task_hvf(struct rq *rq, struct task_struct *p, bool first) 
 
 
 static void
-switched_to_hvf(struct rq *rq, struct task_struct *p) {
+switching_to_hvf(struct rq *rq, struct task_struct *p) {
     /*
      * Give a default value to a process that chose to be scheduled with the scheduler
      * but has not defined its values
@@ -174,6 +174,13 @@ switched_to_hvf(struct rq *rq, struct task_struct *p) {
 
                 compute_init_sched_value(p);
 	}
+}
+
+static void
+switched_to_hvf(struct rq *rq, struct task_struct *p) {
+	/*
+	 * Empty placeholder function to avoid null dereference.
+	 */
 }
 
 static void
@@ -288,6 +295,7 @@ DEFINE_SCHED_CLASS(hvf) = {
 	.dequeue_task		= dequeue_task_hvf,
 	.pick_task		= pick_task_hvf,
 	.set_next_task		= set_next_task_hvf,
+	.switching_to		= switching_to_hvf,
 	.switched_to		= switched_to_hvf,
 	.switched_from		= switched_from_hvf,
 	.task_tick		= task_tick_hvf,
