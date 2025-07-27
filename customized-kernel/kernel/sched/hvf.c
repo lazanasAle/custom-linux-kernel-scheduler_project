@@ -30,6 +30,8 @@ void update_used_se_hvf(struct sched_hvf_entity *se);
 bool hvf_rq_empty(struct hvf_rq *hvf_rq);
 long time_slice(long sched_value);
 long penalty_hvf_entity(struct sched_hvf_entity *se, long ctime);
+void give_default_hvf_values(struct task_struct *p);
+void clear_hvf_values(struct task_struct *p);
 
 
 const struct sched_class hvf_sched_class;
@@ -78,6 +80,7 @@ enqueue_task_hvf(struct rq *rq, struct task_struct *p, int flags) {
 	struct sched_hvf_entity *se_hvf = &p->hvf;
 
         if (flags & (ENQUEUE_INITIAL | ENQUEUE_CHANGED)) {
+		give_default_hvf_values(p);
 		init_sched_hvf_entity(se_hvf);
 		compute_init_sched_value(p);
 	}
@@ -157,23 +160,7 @@ static void set_next_task_hvf(struct rq *rq, struct task_struct *p, bool first) 
 
 static void
 switching_to_hvf(struct rq *rq, struct task_struct *p) {
-    /*
-     * Give a default value to a process that chose to be scheduled with the scheduler
-     * but has not defined its values
-     */
-
-        if (!p->pars_set) {
-	        struct timespec64 now;
-		ktime_get_real_ts64(&now);
-		long curr_time = now.tv_sec + now.tv_nsec/(K*K*K);
-
-                p->deadline_1 = curr_time + 4;
-		p->deadline_2 = curr_time + 6;
-		p->computation_time = K;
-		p->pars_set = true;
-
-                compute_init_sched_value(p);
-	}
+	give_default_hvf_values(p);
 }
 
 static void
@@ -185,17 +172,7 @@ switched_to_hvf(struct rq *rq, struct task_struct *p) {
 
 static void
 switched_from_hvf(struct rq *rq, struct task_struct *p) {
-    /*
-     * Clear scheduling values, since the task changed sched_class
-     * it does not need them anymore
-     */
-
-        if (p->pars_set) {
-	        p->deadline_1 = 0;
-		p->deadline_2 = 0;
-		p->computation_time = 0;
-		p->pars_set = false;
-	}
+	clear_hvf_values(p);
 }
 
 static void task_tick_hvf(struct rq *rq, struct task_struct *curr, int queued) {
@@ -251,6 +228,10 @@ static void task_dead_hvf(struct task_struct *p) {
 	task_rq_unlock(rq, p, &rf);
 }
 
+static void task_fork_hvf(struct task_struct *p) {
+	clear_hvf_values(p);
+}
+
 static void
 put_prev_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se) {
 	if (!se->on_rq)
@@ -300,6 +281,7 @@ DEFINE_SCHED_CLASS(hvf) = {
 	.switched_from		= switched_from_hvf,
 	.task_tick		= task_tick_hvf,
 	.task_dead		= task_dead_hvf,
+	.task_fork		= task_fork_hvf,
 	.put_prev_task		= put_prev_task_hvf,
 	.wakeup_preempt		= wakeup_preempt_hvf
 };
@@ -419,6 +401,30 @@ long time_slice(long sched_value) {
 	return (((scaled_value*range)/K)+min_slice);
 }
 
+inline void give_default_hvf_values(struct task_struct *p) {
+	 if (!p->pars_set) {
+	        struct timespec64 now;
+		ktime_get_real_ts64(&now);
+		long curr_time = now.tv_sec + now.tv_nsec/(K*K*K);
+
+                p->deadline_1 = curr_time + 4;
+		p->deadline_2 = curr_time + 6;
+		p->computation_time = K;
+		p->pars_set = true;
+
+                compute_init_sched_value(p);
+	}
+}
+
+inline void clear_hvf_values(struct task_struct *p) {
+	if (p->pars_set) {
+	        p->deadline_1 = 0;
+		p->deadline_2 = 0;
+		p->computation_time = 0;
+		p->pars_set = false;
+	}
+}
+
 
 inline long penalty_hvf_entity(struct sched_hvf_entity *se, long ctime) {
     long diff = se->time_used - ctime;
@@ -429,5 +435,6 @@ inline long penalty_hvf_entity(struct sched_hvf_entity *se, long ctime) {
     se->curr_sched_value = new_value;
     return new_value;
 }
+
 
 
