@@ -2,7 +2,7 @@
 
 The implementation of my kernel scheduling technique, which is designed to be merged with the **Linux 6.14.8 kernel** source tree, is contained in this repository.
 
-## ⚙️ Conditions
+## ⚙️ Requirements
 
 - **6.14.8** Linux kernel source tarball version.
 - A functional Linux environment with `gcc 14.1.0`, `make`, and necessary development tools (because linux 6.14.8 was made for `gcc 14`, more recent versions like `gcc 15` may display compile errors).
