@@ -1,18 +1,18 @@
-# Linux Scheduling Class Implementation - Kernel 6.14.8
+# Kernel 6.14.8: Implementation of a Linux Scheduling Class
 
-This repository contains the implementation of my kernel scheduling algorithm  designed to be integrated with the **Linux 6.14.8 kernel** source tree.
+The implementation of my kernel scheduling technique, which is intended to be merged with the **Linux 6.14.8 kernel** source tree, is contained in this repository.
 
-## ⚙️ Requirements
+## ⚙️ Conditions
 
-- Linux kernel source tarball version **6.14.8**
-- A working Linux environment with `gcc 14.1.0`, (newer versions like `gcc 15` may show compile errors because linux 6.14.8 was designed for `gcc 14`) `make`, and required development tools
-- Familiarity with kernel compilation and configuration
+- **6.14.8** is the Linux kernel source tarball version.
+- A functional Linux environment with `gcc 14.1.0`, `make`, and necessary development tools (because linux 6.14.8 was made for `gcc 14`, more recent versions like `gcc 15` may display compile errors).
+- Knowledge of kernel configuration and compilation
 
-## 📦 Installation Instructions
+## Installation Guidelines
 
-1. **Download and Extract Kernel Source**
+1. Extract the kernel source after downloading it.
 
-   Download the official Linux 6.14.8 kernel tarball and extract it:
+   Get and extract the official Linux 6.14.8 kernel tarball:
 
    ```bash
    wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.14.8.tar.xz
@@ -21,7 +21,8 @@ This repository contains the implementation of my kernel scheduling algorithm  d
    
 2. **Integrate new Kernel Code**
 
-Clone this repository, and copy the contents into the corresponding paths within the extracted kernel source. The directory structure in this repository matches the kernel tree, so each file must be placed in its matching destination (files already in the kernel will be overwritten with the modified ones of this repo).
+Make a clone of this repository and move the contents of the `customized_kernel` folder into the corresponding locations in the kernel source that was extracted. Each file must be placed in its equivalent location because the directory structure of this folder corresponds to the kernel tree; files that are already in the kernel will be replaced by the updated files from this repository.
+
 
 ```bash
 cp -r custom-linux-kernel-scheduler_project/customized-kernel/* linux-6.14.8/
