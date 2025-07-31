@@ -53,4 +53,4 @@ Integration of additional system calls
 
 ---
 
-The scheduler has been tested and is fully functional with **6.14.11** Linux kerneln version as well.
+The scheduler has been tested and is fully functional with **6.14.11** Linux kernel version as well.
