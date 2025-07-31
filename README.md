@@ -37,7 +37,7 @@ cd linux-6.14.8
 make menuconfig
 make -j$(nproc) bzImage
 ```
-A prebuilt `bzImage` is also included in this repository under:
+A prebuilt `bzImage` is included in this repository under:
 `arch/x86/boot/bzImage`
 
 you can use this `bzImage` in an emulator with qemu providing the equivalent initramfs, or boot a linux vm with the bzImage as the -kernel option
