@@ -28,7 +28,7 @@ Make a clone of this repository and move the contents of the `customized_kernel`
 cp -r custom-linux-kernel-scheduler_project/customized-kernel/* linux-6.14.8/
 ```
 
-3. Configure and Build the Kernels
+3. Configure and Build the Kernel
 
 Run the following commands to configure and build the kernel with the new scheduler:
 
