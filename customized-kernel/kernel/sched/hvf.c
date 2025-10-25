@@ -402,7 +402,7 @@ long time_slice(long sched_value) {
 }
 
 inline void give_default_hvf_values(struct task_struct *p) {
-	 if (!p->pars_set) {
+        if (!p->pars_set) {
 	        struct timespec64 now;
 		ktime_get_real_ts64(&now);
 		long curr_time = now.tv_sec + now.tv_nsec/(K*K*K);
