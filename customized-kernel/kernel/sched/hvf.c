@@ -147,7 +147,7 @@ context_switch_log(struct sched_hvf_entity *hvf, int pid, bool from_to) {
 	ktime_get_real_ts64(&now);
 	long curr_time = now.tv_sec*K + now.tv_nsec/(K*K);
 
-	trace_printk("hvf_task_switched_%s,%d,%ld,%ld\n", setting, pid, hvf->curr_sched_value, curr_time);
+	pr_info("hvf_task_switched_%s,%d,%ld,%ld\n", setting, pid, hvf->curr_sched_value, curr_time);
 }
 
 static void

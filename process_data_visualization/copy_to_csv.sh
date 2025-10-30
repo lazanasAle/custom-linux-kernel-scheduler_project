@@ -9,5 +9,5 @@ echo "from_to,pid,curr_sched_value,time_event" > "$OUTPUT_FILE2"
 cat /sys/kernel/debug/tracing/trace | grep "hvf_task_terminated" | \
     awk -F, '{ print $2","$3","$4","$5","$6","$7 }' >> "$OUTPUT_FILE1"
 
-cat /sys/kernel/debug/tracing/trace | grep "hvf_task_switched_" | \
+dmesg | grep "hvf_task_switched_" | \
     awk -F, '{ print $2","$3","$4","$5 }' >> "$OUTPUT_FILE2"
