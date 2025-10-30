@@ -20,6 +20,9 @@
 #define H 100
 
 
+#define FROM false
+#define TO true
+
 long compute_init_sched_value(struct task_struct *p);
 long reduce_sched_value(struct sched_hvf_entity *se);
 void init_sched_hvf_entity(struct sched_hvf_entity *se);
@@ -138,23 +141,35 @@ dequeue_task_hvf(struct rq *rq, struct task_struct *p, int flags) {
 }
 
 static void
-set_next_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se) {
+context_switch_log(struct sched_hvf_entity *hvf, int pid, bool from_to) {
+	const char *setting = (from_to == FROM)? "from" : "to";
+	struct timespec64 now;
+	ktime_get_real_ts64(&now);
+	long curr_time = now.tv_sec*K + now.tv_nsec/(K*K);
+
+	trace_printk("hvf_task_switched_%s,%d,%ld,%ld\n", setting, pid, hvf->curr_sched_value, curr_time);
+}
+
+static void
+set_next_hvf_entity(struct hvf_rq *hvf_rq, struct sched_hvf_entity *se, int pid) {
 	if (se->on_rq)
 		dequeue_hvf_entity(hvf_rq, se);
 
 	update_latest_se_hvf(se);
 
+	context_switch_log(se, pid, TO);
 	hvf_rq->curr = se;
 }
 
 
 static void set_next_task_hvf(struct rq *rq, struct task_struct *p, bool first) {
 	struct sched_hvf_entity *se_hvf = &p->hvf;
+	int pid = p->pid;
 	struct hvf_rq *hvf_rq = &rq->hvf;
 	if (!first)
 		return;
 
-	set_next_hvf_entity(hvf_rq, se_hvf);
+	set_next_hvf_entity(hvf_rq, se_hvf, pid);
 }
 
 
@@ -182,6 +197,7 @@ static void task_tick_hvf(struct rq *rq, struct task_struct *curr, int queued) {
 	curr_ent->runtime += TICK_NSEC;
 
         if (curr_ent->runtime >= slice*K*K) {
+		context_switch_log(curr_ent, curr->pid, FROM);
 		curr_ent->slice_expired = true;
 		resched_curr(rq);
 	}
