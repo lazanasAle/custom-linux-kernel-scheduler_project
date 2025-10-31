@@ -6,7 +6,6 @@ import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
-# Προσοχη θελει installation pandas
 
 
 def readcsv(filename):
@@ -17,10 +16,6 @@ def readcsv(filename):
 
 def creatediagram(x_axis,y_axis,PID,title,x_label,y_label):
     bars = plt.bar(x_axis, y_axis, color='red')
-
-
-
-
 
     cursor = mplcursors.cursor(hover=mplcursors.HoverMode.Transient)
 
@@ -35,9 +30,6 @@ def creatediagram(x_axis,y_axis,PID,title,x_label,y_label):
                 sel.artist[sel.index].get_x() + sel.artist[sel.index].get_width() / 2,
                 sel.artist[sel.index].get_height()
             )
-
-
-
 
 
     plt.xlabel(x_label)
@@ -58,15 +50,13 @@ wait_time=[]
 computation_time=[]
 response_time=[]
 
-for i in range (len(read)):
+for i in range(len(read)):
     processID.append(read[i][0])
     init_values.append(float(read[i][1]))
     turnaround_time.append(float(read[i][2]))
     wait_time.append(float(read[i][3]))
     computation_time.append(float(read[i][4]))
     response_time.append(float(read[i][5]))
-
-
 
 
 #create diagrams
