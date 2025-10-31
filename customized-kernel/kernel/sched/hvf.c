@@ -427,13 +427,12 @@ inline void clear_hvf_values(struct task_struct *p) {
 
 
 inline long penalty_hvf_entity(struct sched_hvf_entity *se, long ctime) {
-    long diff = se->time_used - ctime;
-    long old_value = se->curr_sched_value;
-    long new_value = old_value - (diff*diff*old_value)/100;
-    new_value = (new_value>0)? new_value : (old_value == 0)? 10: 0;
-
-    se->curr_sched_value = new_value;
-    return new_value;
+	long diff = se->time_used - ctime;
+	long old_value = se->curr_sched_value;
+	long new_value = old_value - (diff*diff*old_value)/100;
+	new_value = (new_value>0)? new_value : (old_value == 0)? 10: 0;
+	se->curr_sched_value = new_value;
+	return new_value;
 }
 
 
