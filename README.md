@@ -1,6 +1,6 @@
 # Kernel 6.14.8: Implementation of a Linux Scheduling Class
 
-The implementation of my kernel scheduling technique, which is designed to be merged with the **Linux 6.14.8 kernel** source tree, is contained in this repository.
+The implementation of my kernel scheduling technique, which is designed to be mergeable with the **Linux 6.14.8 kernel** source tree, is contained in this repository.
 
 ## Requirements
 
