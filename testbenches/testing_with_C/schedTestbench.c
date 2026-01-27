@@ -42,6 +42,10 @@ void delay(int workload) {
 
 void do_work(int workload) {
         int pid = getpid();
+        if (pid < 0) {
+                printf("error in getpid\n");
+                return;
+        }
         printf("process %d begins\n", pid);
         delay(workload);
         printf("process %d ends\n", pid);
@@ -49,7 +53,7 @@ void do_work(int workload) {
 
 int main() {
         pid_t procs[20];
-        
+
         for (int j = 0; j < 20; ++j) {
                 procs[j] = fork();
                 if (procs[j] < 0) {

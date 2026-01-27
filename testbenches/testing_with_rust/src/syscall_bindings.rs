@@ -1,4 +1,4 @@
-use libc::{syscall, pid_t, sched_param, sched_setscheduler, fork};
+use libc::{syscall, pid_t, sched_param, sched_setscheduler, fork, getpid};
 
 const SCHED_HVF: i32 = 8;
 const __NR_SET_SCHED_PARS: i64 = 467;
@@ -38,5 +38,16 @@ pub fn safe_fork() -> Result<pid_t, std::io::Error> {
         }
         else {
                 return Ok(pid);
+        }
+}
+
+pub fn safe_getpid() -> Result<pid_t, std::io::Error> {
+        let pid: pid_t = unsafe { getpid() };
+
+        if pid == -1 {
+                return Err(std::io::Error::last_os_error());
+        }
+        else {
+                 return Ok(pid);
         }
 }
