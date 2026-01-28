@@ -1,9 +1,8 @@
-use std::{os::unix::raw::pid_t, process::exit, ptr::null, time::{SystemTime, UNIX_EPOCH}};
+use std::{process::exit, ptr::null, time::{SystemTime, UNIX_EPOCH}};
 
-use libc::waitpid;
+use libc::{sleep, waitpid, pid_t};
 
-use crate::syscall_bindings::{d_params, get_sched_params, safe_fork, safe_getpid,
-        set_hvf_scheduler_current, set_sched_params, test_for_wrong_set, print_params};
+use crate::syscall_bindings::{d_params, get_sched_params, get_sched_score, print_params, safe_fork, safe_getpid, set_hvf_scheduler_current, set_sched_params, test_for_wrong_set};
 
 //scheduler testing
 
@@ -112,4 +111,59 @@ pub fn make_first_wrong() {
                 &"[+] correctly rejecting d2<d1 parameters".to_string());
         test_for_wrong_set(now_secs + 7, now_secs + 13, BAD_TIME as i64,
                 &"[+] correctly rejecting parameters with computation_time more than given in deadlines".to_string());
+}
+
+
+pub fn test_syscalls() {
+        make_first_right();
+        let score_before_sleeping: i64 = match get_sched_score() {
+                Ok(score) => score,
+                Err(_err) => {
+                        println!("Something went wrong calculating the score");
+                        return;
+                }
+        };
+        println!("score before sleeping = {}", score_before_sleeping);
+
+        unsafe{sleep(4)};
+        let score_after4: i64 = match get_sched_score() {
+                Ok(score) => score,
+                Err(_err) => {
+                        println!("Something went wrong calculating the score");
+                        return;
+                }
+        };
+        println!("score after sleeping 4 = {}", score_after4);
+
+        unsafe{sleep(3)};
+        let score_after7: i64 = match get_sched_score() {
+                Ok(score) => score,
+                Err(_err) => {
+                        println!("Something went wrong calculating the score");
+                        return;
+                }
+        };
+        println!("score after sleeping 7 = {}", score_after7);
+
+        unsafe{sleep(2)};
+        let score_after9: i64 = match get_sched_score() {
+                Ok(score) => score,
+                Err(_err) => {
+                        println!("Something went wrong calculating the score");
+                        return;
+                }
+        };
+        println!("score after sleeping 9 = {}", score_after9);
+
+        unsafe{sleep(4)};
+        let score_after13: i64 = match get_sched_score() {
+                Ok(score) => score,
+                Err(_err) => {
+                        println!("Something went wrong calculating the score");
+                        return;
+                }
+        };
+        println!("score after sleeping 13 = {}", score_after13);
+
+        make_first_wrong();
 }
