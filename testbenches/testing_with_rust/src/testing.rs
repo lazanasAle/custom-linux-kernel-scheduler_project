@@ -2,7 +2,8 @@ use std::{os::unix::raw::pid_t, process::exit, ptr::null, time::{SystemTime, UNI
 
 use libc::waitpid;
 
-use crate::syscall_bindings::{safe_fork, safe_getpid, set_hvf_scheduler_current, set_sched_params};
+use crate::syscall_bindings::{d_params, get_sched_params, safe_fork, safe_getpid,
+        set_hvf_scheduler_current, set_sched_params, test_for_wrong_set, print_params};
 
 //scheduler testing
 
@@ -75,4 +76,40 @@ pub fn test_scheduler() {
                         waitpid(procs[j], null::<i32>() as *mut i32, 0);
                 };
         }
+}
+
+//syscall testing
+
+const GOOD_TIME: u32 = 1200;
+const BAD_TIME: u32 = 120000;
+
+pub fn make_first_right() {
+        let now = SystemTime::now()
+                .duration_since(UNIX_EPOCH).expect("Time went backwards");
+        let now_secs: i64 = now.as_secs() as i64;
+        match set_sched_params(now_secs + 7, now_secs + 12, GOOD_TIME as i64) {
+                Ok(()) => (),
+                Err(_err) => {
+                        println!("[-] incorrect rejection of parameters with values: D1: {} D2: {} CT: {}", now_secs+7, now_secs+12, GOOD_TIME);
+                        return;
+                }
+        }
+        let mut params: d_params = d_params { deadline1: 0, deadline2: 0, computation_time: 0 };
+        match get_sched_params(&mut params) {
+                Ok(()) => (),
+                Err(_err) => {
+                        println!("Something went wrong ingetting the parameters");
+                }
+        }
+        print_params(&params);
+}
+
+pub fn make_first_wrong() {
+        let now = SystemTime::now()
+                .duration_since(UNIX_EPOCH).expect("Time went backwards");
+        let now_secs: i64 = now.as_secs() as i64;
+        test_for_wrong_set(now_secs + 11, now_secs + 8, GOOD_TIME as i64,
+                &"[+] correctly rejecting d2<d1 parameters".to_string());
+        test_for_wrong_set(now_secs + 7, now_secs + 13, BAD_TIME as i64,
+                &"[+] correctly rejecting parameters with computation_time more than given in deadlines".to_string());
 }

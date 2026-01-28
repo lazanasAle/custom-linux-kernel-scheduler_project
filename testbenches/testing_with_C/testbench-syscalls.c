@@ -91,7 +91,7 @@ void make_first_wrong() {
 		struct d_params pars;
 		get_sched_params(&pars);
 		print_params(&pars);
-    }
+	}
 }
 
 void make_second_right() {
