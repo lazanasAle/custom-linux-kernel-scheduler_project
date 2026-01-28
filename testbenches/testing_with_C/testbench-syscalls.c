@@ -26,23 +26,23 @@ int main() {
 	make_first_right();
 	long score_before = syscall(__NR_GET_SCHED_SCORE);
 	printf("score before sleeping = %ld\n", score_before);
-	
+
 	sleep(4);
 	long score_after4 = syscall(__NR_GET_SCHED_SCORE);
 	printf("score after sleeping 4 = %ld\n", score_after4);
-	
+
 	sleep(3);
 	long score_after7 = syscall(__NR_GET_SCHED_SCORE);
 	printf("score after sleeping 7 = %ld\n", score_after7);
-	
+
 	sleep(2);
 	long score_after9 = syscall(__NR_GET_SCHED_SCORE);
 	printf("score after sleeping 9 = %ld\n", score_after9);
-	
+
 	sleep(4);
 	long score_after13 = syscall(__NR_GET_SCHED_SCORE);
 	printf("score after sleeping 13 = %ld\n", score_after13);
-	
+
 	make_first_wrong();
 	make_second_right();
 	make_second_wrong();
@@ -60,7 +60,7 @@ void make_first_right() {
 	time_t now = time(NULL);
 	long ret1=set_sched_params(now+7, now+12, GOOD_TIME);
 	if (ret1!=0) {
-		printf("[-] incorrect rejection of parameters with values: D1: %ld D2: %ld CT: %d\n", now+7, now+10, GOOD_TIME);
+		printf("[-] incorrect rejection of parameters with values: D1: %ld D2: %ld CT: %d\n", now+7, now+12, GOOD_TIME);
 	}
 	else {
 		printf("[+] correctly accepted right parameters\n");
