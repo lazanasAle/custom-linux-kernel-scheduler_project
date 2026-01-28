@@ -25,6 +25,31 @@ pub fn set_sched_params(x: i64, y: i64, z: i64) -> Result<(), std::io::Error> {
         }
 }
 
+pub fn get_sched_params(d: &mut d_params) -> Result<(), std::io::Error> {
+        let ret: i64 = unsafe {
+                syscall(__NR_GET_SCHED_PARS, d as *const d_params)
+        };
+
+        if ret < 0 {
+                return Err(std::io::Error::last_os_error());
+        }
+        else {
+                return Ok(());
+        }
+}
+pub fn get_sched_score() -> Result<i64, std::io::Error>{
+        let ret: i64 = unsafe {
+                syscall(__NR_GET_SCHED_SCORE)
+        };
+
+        if ret < 0 {
+                return Err(std::io::Error::last_os_error());
+        }
+        else {
+                return Ok(ret);
+        }
+}
+
 pub fn set_hvf_scheduler(pid: pid_t) {
         let param = sched_param{sched_priority: 0};
         // safety note calling syscall to change scheduler for this process.
