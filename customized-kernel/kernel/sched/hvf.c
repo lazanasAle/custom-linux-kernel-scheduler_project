@@ -288,6 +288,8 @@ static void wakeup_preempt_hvf(struct rq *rq, struct task_struct *p, int flags)
 	}
 }
 
+#ifdef CONFIG_SMP
+
 static int balance_hvf(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
 {
         if (sched_hvf_runnable(rq))
@@ -295,21 +297,29 @@ static int balance_hvf(struct rq *rq, struct task_struct *prev, struct rq_flags 
         return 0; //this will change to another function.
 }
 
+#endif
 
 DEFINE_SCHED_CLASS(hvf) = {
+
     	.enqueue_task		= enqueue_task_hvf,
 	.dequeue_task		= dequeue_task_hvf,
-	.pick_task		= pick_task_hvf,
-	.set_next_task		= set_next_task_hvf,
-	.switching_to		= switching_to_hvf,
-	.switched_to		= switched_to_hvf,
-	.switched_from		= switched_from_hvf,
-	.task_tick		= task_tick_hvf,
-	.task_dead		= task_dead_hvf,
-	.task_fork		= task_fork_hvf,
-	.put_prev_task		= put_prev_task_hvf,
 	.wakeup_preempt		= wakeup_preempt_hvf,
-	.balance                = balance_hvf
+
+#ifdef CONFIG_SMP
+	.balance                = balance_hvf,
+#endif
+
+	.pick_task		= pick_task_hvf,
+	.put_prev_task		= put_prev_task_hvf,
+	.set_next_task		= set_next_task_hvf,
+
+	.task_tick		= task_tick_hvf,
+	.task_fork		= task_fork_hvf,
+	.task_dead		= task_dead_hvf,
+
+	.switching_to		= switching_to_hvf,
+	.switched_from		= switched_from_hvf,
+	.switched_to		= switched_to_hvf
 };
 
 
