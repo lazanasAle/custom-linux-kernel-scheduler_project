@@ -2618,6 +2618,11 @@ static inline bool sched_fair_runnable(struct rq *rq)
 	return rq->cfs.nr_queued > 0;
 }
 
+static inline bool sched_hvf_runnable(struct rq *rq)
+{
+        return rq->hvf.nr_hvf_queued > 0;
+}
+
 extern struct task_struct *pick_next_task_fair(struct rq *rq, struct task_struct *prev, struct rq_flags *rf);
 extern struct task_struct *pick_task_idle(struct rq *rq);
 
