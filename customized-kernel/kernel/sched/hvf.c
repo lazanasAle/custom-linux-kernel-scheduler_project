@@ -11,7 +11,9 @@
 #include <linux/cpumask.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
+#include <linux/limits.h>
 #include <asm/current.h>
+#include <linux/cpumask_api.h>
 #include <linux/timekeeping.h>
 #include <asm-generic/errno.h>
 #include "sched.h"
@@ -290,11 +292,42 @@ static void wakeup_preempt_hvf(struct rq *rq, struct task_struct *p, int flags)
 
 #ifdef CONFIG_SMP
 
-static int balance_hvf(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
+static inline int balance_hvf(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
 {
-        if (sched_hvf_runnable(rq))
-                return 1;
-        return 0; //this will change to another function.
+        return sched_hvf_runnable(rq);
+}
+
+static int select_task_rq_hvf(struct task_struct *p, int prev_cpu, int flags)
+{
+        int new_cpu = prev_cpu;
+
+        if (!(flags & (WF_TTWU | WF_FORK)))
+                goto out;
+
+        int cpu, min_cpu = -1;
+        unsigned int min_nr_hvf = UINT_MAX;
+        struct rq *rq;
+        struct hvf_rq *hvf_rq;
+
+        /*
+         * currently returning the cpu with the minimum number of my tasks tommorrow i should make
+         * it taking into account the scheduling score of the process so it adds a weight metric.
+         */
+
+        for_each_cpu(cpu, p->cpus_ptr) {
+                rq = cpu_rq(cpu);
+                hvf_rq = &rq->hvf;
+                if (hvf_rq->nr_hvf_queued < min_nr_hvf) {
+                        min_nr_hvf = hvf_rq->nr_hvf_queued;
+                        min_cpu = cpu;
+                }
+        }
+
+        if (min_cpu >= 0)
+                new_cpu = min_cpu;
+
+out:
+        return new_cpu;
 }
 
 #endif
@@ -307,6 +340,7 @@ DEFINE_SCHED_CLASS(hvf) = {
 
 #ifdef CONFIG_SMP
 	.balance                = balance_hvf,
+        .select_task_rq         = select_task_rq_hvf,
 #endif
 
 	.pick_task		= pick_task_hvf,
