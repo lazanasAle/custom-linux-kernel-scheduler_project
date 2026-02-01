@@ -7,8 +7,10 @@
  */
 
 #include <linux/sched.h>
+#include <linux/slab.h>
+#include <linux/sort.h>
 #include <linux/rbtree.h>
-#include <linux/cpumask.h>
+#include <linux/string.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
 #include <linux/limits.h>
@@ -292,10 +294,69 @@ static void wakeup_preempt_hvf(struct rq *rq, struct task_struct *p, int flags)
 
 #ifdef CONFIG_SMP
 
-static inline int balance_hvf(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
+struct cpu_load {
+        int cpu_num;
+        unsigned int nr_running;
+};
+
+static int compare_cpu_loads(const void *a, const void *b)
 {
-        return sched_hvf_runnable(rq);
+        const struct cpu_load *cpu_load_a = a;
+        const struct cpu_load *cpu_load_b = b;
+
+        if (cpu_load_a->nr_running > cpu_load_b->nr_running)
+                return 1;
+        else if (cpu_load_a->nr_running == cpu_load_b->nr_running)
+                return 0;
+        else
+                return -1;
 }
+
+static void swap_cpu_loads(void *a, void *b, int size)
+{
+        struct cpu_load tmp = *((struct cpu_load *)a);
+        memcpy(a, b, size);
+        memcpy(b, &tmp, size);
+}
+
+static void sort_cpu_loads_in_mask(const cpumask_t *mask, struct cpu_load *loads, size_t nr_cpus)
+{
+        int cpu;
+        int i = 0;
+        struct rq *rq;
+        for_each_cpu(cpu, mask) {
+                rq = cpu_rq(cpu);
+                loads[i].cpu_num = cpu;
+                loads[i].nr_running = rq->nr_running;
+                i++;
+        }
+
+        sort(loads, nr_cpus, sizeof(struct cpu_load), compare_cpu_loads, swap_cpu_loads);
+}
+
+static int get_right_cpu(struct cpu_load *loads, long sched_value, size_t nr_cpus)
+{
+        size_t chunk_size = H / nr_cpus;
+
+        /*
+         * divide in chunks and return according to the sched_value
+         * (low load if small sched_value high load if higher sched_value)
+         */
+
+        for (size_t j = 0; j < nr_cpus; ++j) {
+                if (sched_value < (j + 1) * chunk_size)
+                        return loads[j].cpu_num;
+        }
+
+        /*
+         * if we reached this far it is in the remaining chunk
+         * so it is not emminent of it to run in a low loaded cpu
+         * thus we return the highest loaded cpu
+         */
+
+        return loads[nr_cpus - 1].cpu_num;
+}
+
 
 static int select_task_rq_hvf(struct task_struct *p, int prev_cpu, int flags)
 {
@@ -304,30 +365,24 @@ static int select_task_rq_hvf(struct task_struct *p, int prev_cpu, int flags)
         if (!(flags & (WF_TTWU | WF_FORK)))
                 goto out;
 
-        int cpu, min_cpu = -1;
-        unsigned int min_nr_hvf = UINT_MAX;
-        struct rq *rq;
-        struct hvf_rq *hvf_rq;
+        int cpu_len = p->nr_cpus_allowed;
+        if (cpu_len == 1)
+                goto out;
 
-        /*
-         * currently returning the cpu with the minimum number of my tasks tommorrow i should make
-         * it taking into account the scheduling score of the process so it adds a weight metric.
-         */
-
-        for_each_cpu(cpu, p->cpus_ptr) {
-                rq = cpu_rq(cpu);
-                hvf_rq = &rq->hvf;
-                if (hvf_rq->nr_hvf_queued < min_nr_hvf) {
-                        min_nr_hvf = hvf_rq->nr_hvf_queued;
-                        min_cpu = cpu;
-                }
-        }
-
-        if (min_cpu >= 0)
-                new_cpu = min_cpu;
+        //create the array of loads
+        struct cpu_load *loads = kmalloc_array(cpu_len, sizeof(struct cpu_load), GFP_KERNEL);
+        sort_cpu_loads_in_mask(p->cpus_ptr, loads, cpu_len);
+        struct sched_hvf_entity *se_hvf = &p->hvf;
+        new_cpu = get_right_cpu(loads, se_hvf->curr_sched_value, cpu_len);
+        kfree(loads);
 
 out:
         return new_cpu;
+}
+
+static inline int balance_hvf(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
+{
+        return sched_hvf_runnable(rq);
 }
 
 #endif
