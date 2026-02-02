@@ -387,8 +387,25 @@ static void migrate_task_rq_hvf(struct task_struct *p, int new_cpu)
 {
         p->hvf.curr_cpu = new_cpu;
         int prev_cpu = p->hvf.prev_cpu;
+
+        struct rq *prev_rq = cpu_rq(prev_cpu);
+        struct rq *new_rq = cpu_rq(new_cpu);
+
+        unsigned int prev_running = prev_rq->nr_running;
+        unsigned int new_running = new_rq->nr_running;
+
+        long curr_value = p->hvf.curr_sched_value;
+
         if (prev_cpu != new_cpu)
-                trace_printk("hvf_task_migrates: %d from %d to %d\n", p->pid, prev_cpu, new_cpu);
+                trace_printk(
+                        "hvf_task_migrates: %d value: %ld from %d, %d running to %d, %d running\n",
+                        p->pid,
+                        curr_value,
+                        prev_cpu,
+                        prev_running,
+                        new_cpu,
+                        new_running
+                );
 }
 
 static inline int balance_hvf(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
