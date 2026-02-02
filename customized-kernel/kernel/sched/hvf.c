@@ -377,7 +377,18 @@ static int select_task_rq_hvf(struct task_struct *p, int prev_cpu, int flags)
         kfree(loads);
 
 out:
+        p->hvf.prev_cpu = prev_cpu;
+        p->hvf.curr_cpu = new_cpu;
+
         return new_cpu;
+}
+
+static void migrate_task_rq_hvf(struct task_struct *p, int new_cpu)
+{
+        p->hvf.curr_cpu = new_cpu;
+        int prev_cpu = p->hvf.prev_cpu;
+        if (prev_cpu != new_cpu)
+                trace_printk("hvf_task_migrates: %d from %d to %d\n", p->pid, prev_cpu, new_cpu);
 }
 
 static inline int balance_hvf(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
@@ -396,6 +407,7 @@ DEFINE_SCHED_CLASS(hvf) = {
 #ifdef CONFIG_SMP
 	.balance                = balance_hvf,
         .select_task_rq         = select_task_rq_hvf,
+        .migrate_task_rq        = migrate_task_rq_hvf,
 #endif
 
 	.pick_task		= pick_task_hvf,
