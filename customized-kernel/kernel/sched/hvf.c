@@ -385,7 +385,7 @@ static inline int balance_hvf(struct rq *rq, struct task_struct *prev, struct rq
         return sched_hvf_runnable(rq);
 }
 
-#endif
+#endif /* CONFIG_SMP */
 
 DEFINE_SCHED_CLASS(hvf) = {
 
